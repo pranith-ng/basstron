@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Boxing";
+  src: url("/fonts/Boxing-Regular.woff2") format("woff2"),
+       url("/fonts/Boxing-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -8,8 +17,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: monospace;
+  --font-josefin: "Josefin Sans", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,3 +33,41 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.boxing-font {
+  font-family: "Boxing", sans-serif;
+}
+
+.txt{
+    font-family: var(--font-josefin);
+}
+
+.gradientimg {
+  background: linear-gradient(
+    to top,
+    #fff1eb,
+    #b6e7fd,
+    #fff1eb
+  );
+  background-size: 200% 200%;
+  animation: gradientMove 10s ease infinite;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 50% 0%;
+  }
+
+  50% {
+    background-position: 50% 100%;
+  }
+
+  100% {
+    background-position: 50% 0%;
+  }
+}
+
+
+
+/* important background .gradientimg{
+background-image: linear-gradient(to top, #fff1eb 0%, #ace0f9 100%);} */
