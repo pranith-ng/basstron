@@ -18,8 +18,8 @@ export default function Video() {
   const features = [
     "Powered by the second-generation H2 processor, engineered for greater power and efficiency, enabling superior noise control and high-fidelity audio processing.",
     "Featuring a 12mm titanium driver, engineered for crystal-clear highs, rich mids, and deep, powerful bass.",
-    "IPX7 water resistance, engineered to withstand sweat, splashes, and rain while keeping your listening experience uninterrupted."
-  ]
+    "IPX7 water resistance, engineered to withstand sweat, splashes, and rain while keeping your listening experience uninterrupted.",
+  ];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,158 +27,168 @@ export default function Video() {
 
     if (!canvas || !container) return;
 
-    const context = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
 
-    if (!context) return;
+    if (!ctx) return;
 
-    // ============================================
-    // FRAME STATE
-    // ============================================
+    // -------------------------
+    // FRAME
+    // -------------------------
 
     const frame = {
       current: 0,
     };
 
-    // ============================================
-    // LOAD IMAGES
-    // ============================================
+    // -------------------------
+    // IMAGES
+    // -------------------------
 
     const images: HTMLImageElement[] = [];
 
     for (let i = 1; i <= TOTAL_FRAMES; i++) {
       const img = new Image();
-
       img.src = getFrameSrc(i);
-
       images.push(img);
     }
 
-    // ============================================
+    // -------------------------
+    // CANVAS SIZE
+    // -------------------------
+
+    const resizeCanvas = () => {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+
+      render();
+    };
+
+    // -------------------------
     // RENDER
-    // ============================================
+    // -------------------------
 
     const render = () => {
       const img = images[Math.round(frame.current)];
 
-      if (!img || !img.complete || img.naturalWidth === 0) {
-        return;
-      }
+      if (!img || !img.complete) return;
 
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
 
       if (!width || !height) return;
 
-      context.clearRect(0, 0, width, height);
-
-      // Keep original image aspect ratio
+      ctx.clearRect(0, 0, width, height);
 
       const imageRatio = img.naturalWidth / img.naturalHeight;
       const canvasRatio = width / height;
 
-      let drawWidth: number;
-      let drawHeight: number;
+      let drawWidth;
+      let drawHeight;
 
       if (imageRatio > canvasRatio) {
-        // Image is wider
-
         drawWidth = width;
         drawHeight = width / imageRatio;
       } else {
-        // Image is taller
-
         drawHeight = height;
         drawWidth = height * imageRatio;
       }
 
-      // Center image inside canvas
+      const x = (width - drawWidth) / 2;
+      const y = (height - drawHeight) / 2;
 
-      const offsetX = (width - drawWidth) / 2;
-      const offsetY = (height - drawHeight) / 2;
-
-      context.drawImage(
+      ctx.drawImage(
         img,
-        offsetX,
-        offsetY,
+        x,
+        y,
         drawWidth,
         drawHeight
       );
     };
 
-    // ============================================
-    // RESIZE
-    // ============================================
-    //
-    // IMPORTANT:
-    // CSS controls the visible canvas size.
-    //
-    // JS ONLY controls internal resolution.
-    // ============================================
-
-    const resizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-      canvas.width = Math.round(rect.width * dpr);
-      canvas.height = Math.round(rect.height * dpr);
-
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      render();
-    };
-
+    // Initial canvas size
     resizeCanvas();
 
-    window.addEventListener("resize", resizeCanvas);
-
-    // ============================================
+    // -------------------------
     // FIRST FRAME
-    // ============================================
+    // -------------------------
 
     images[0].onload = render;
 
-    // ============================================
-    // GSAP + SCROLLTRIGGER
-    // ============================================
+    // -------------------------
+    // SCROLL ANIMATION
+    // -------------------------
 
-    const ctx = gsap.context(() => {
-      gsap.to(frame, {
-        current: TOTAL_FRAMES - 1,
+    const animation = gsap.to(frame, {
+      current: TOTAL_FRAMES - 1,
 
-        ease: "none",
+      ease: "none",
 
-        snap: {
-          current: 1,
-        },
+      snap: {
+        current: 1,
+      },
 
-        onUpdate: render,
+      onUpdate: render,
 
-        scrollTrigger: {
-          trigger: container,
+      scrollTrigger: {
+        trigger: container,
+        start: "top top",
+        end: "+=28000",
+        scrub: true,
+        pin: true,
+        pinSpacing: true,
+      },
+    });
 
-          start: "top top",
+    // -------------------------
+    // RESIZE
+    // -------------------------
 
-          end: "+=28000",
+    const handleResize = () => {
+      resizeCanvas();
 
-          scrub: true,
+      ScrollTrigger.refresh();
+    };
 
-          pin: true,
+    window.addEventListener("resize", handleResize);
 
-          pinSpacing: true,
+    // -------------------------
+    // TAB SWITCH
+    // -------------------------
 
-        },
-      });
-    }, container);
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        resizeCanvas();
+        ScrollTrigger.refresh();
+        render();
+      }
+    };
 
-    // ============================================
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibility
+    );
+
+    // -------------------------
     // CLEANUP
-    // ============================================
+    // -------------------------
 
     return () => {
-      ctx.revert();
+      window.removeEventListener(
+        "resize",
+        handleResize
+      );
 
-      window.removeEventListener("resize", resizeCanvas);
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibility
+      );
+
+      animation.kill();
+
+      ScrollTrigger.getAll().forEach((trigger) => {
+        if (trigger.trigger === container) {
+          trigger.kill();
+        }
+      });
     };
   }, []);
 
@@ -187,46 +197,48 @@ export default function Video() {
       ref={containerRef}
       className="relative h-screen w-screen overflow-hidden bg-black"
     >
-      {/* ============================================
-          CANVAS AREA
-          
-          80vw × 80vh
-          
-          Flex keeps canvas horizontally centered.
-          No translate-x.
-          ============================================ */}
+      {/* CANVAS */}
 
-      <div className="absolute top-0 left-0 flex h-[80vh] w-full justify-center">
+      <div className="absolute inset-0 flex items-center justify-center">
         <canvas
           ref={canvasRef}
           className="
             block
-            h-[90vh]
-            w-[90vw]
+            h-[160vh]
+            w-[160vw]
+            lg:h-screen
+            lg:w-screen
             pointer-events-none
           "
         />
       </div>
 
-      {/* ============================================
-          TEXT AREA
-          
-          Bottom 20vh
-          ============================================ */}
+      {/* TEXT */}
 
       <div
         className="
           absolute
-          bottom-[5vh]
+          bottom-15
           left-0
           z-10
           flex
           w-full
-          items-center
           justify-center
         "
       >
-        <p className="txt text-sm italic text-gray-400 text-center md:px-32 py-6 md:text-xl">
+        <p
+          className="
+            txt
+            px-6
+            py-6
+            text-center
+            text-sm
+            italic
+            text-gray-400
+            md:px-32
+            md:text-xl
+          "
+        >
           {features[0]}
         </p>
       </div>

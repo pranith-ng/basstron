@@ -4,18 +4,19 @@ import Hero from "./components/Hero";
 import Video from "./components/Video";
 import Features from "./components/Features";
 import Svg from "./components/Svg";
+import Specifications from "./components/Specification";
 
 export default function Home() {
   return (
     <div >
       <div className="relative h-screen w-screen">
-        <Viewer />
+        {/* <Viewer /> */}
         <Hero />
       </div>
       <Video />
       <Features />
+      <Specifications />
       {/* <Svg /> */}
-      {/* <Video /> */}
     </div>
   );
 }
