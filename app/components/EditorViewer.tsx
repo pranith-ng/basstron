@@ -1,237 +1,682 @@
 "use client";
 
 import * as THREE from "three";
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Environment, OrbitControls } from "@react-three/drei";
-import EditorModel from "./EditorModel";
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+} from "react";
 
-// Configured with your exact material names
+import { Canvas } from "@react-three/fiber";
+import {
+  Environment,
+  OrbitControls,
+} from "@react-three/drei";
+
+import EditorModel, {
+  MaterialPreset,
+  MaterialState,
+} from "./EditorModel";
+
+// ---------------------------------------------------------
+// COMPONENT LISTS
+// ---------------------------------------------------------
+
 const EARBUD_MATERIALS = [
-  { id: "plastic_tws", label: "Body Plastic", matNames: ["plastic_tws"] },
-  { id: "leather_tws", label: "Leather Accent", matNames: ["leather_tws"] },
-  { id: "silicone_tws", label: "Ear Tips (Silicone)", matNames: ["silicone_tws"] },
-  { id: "metal_tws", label: "Metal Contacts/Stem", matNames: ["metal_tws"] },
-  { id: "inner_mesh_tws", label: "Inner Mesh", matNames: ["innermesh_tws"] },
-  { id: "logo_material", label: "Earbud Logo", matNames: ["Material"] },
+  {
+    id: "plastic_tws",
+    label: "Body Plastic",
+    matNames: ["plastic_tws"],
+  },
+  {
+    id: "leather_tws",
+    label: "Leather Accent",
+    matNames: ["leather_tws"],
+  },
+  {
+    id: "silicone_tws",
+    label: "Ear Tips (Silicone)",
+    matNames: ["silicone_tws"],
+  },
+  {
+    id: "metal_tws",
+    label: "Metal Contacts/Stem",
+    matNames: ["metal_tws"],
+  },
+  {
+    id: "inner_mesh_tws",
+    label: "Inner Mesh",
+    matNames: ["innermesh_tws"],
+  },
+  {
+    id: "logo_material",
+    label: "Earbud Logo",
+    matNames: ["Material"],
+  },
 ];
 
 const CASE_MATERIALS = [
-  { id: "case_plastic", label: "Outer Shell", matNames: ["case_plastic"] },
-  { id: "case_inner", label: "Inner Tray", matNames: ["case_glossinner", "case_innerplastic"] },
-  { id: "case_logo", label: "Case Logo", matNames: ["case_logo.001"] },
+  {
+    id: "case_plastic",
+    label: "Outer Shell",
+    matNames: ["case_plastic"],
+  },
+  {
+    id: "case_inner",
+    label: "Inner Tray",
+    matNames: [
+      "case_glossinner",
+      "case_innerplastic",
+    ],
+  },
+  {
+    id: "case_logo",
+    label: "Case Logo",
+    matNames: ["case_logo.001"],
+  },
 ];
 
-// Presets for the 2x2 Texture Grid
-const TEXTURE_PRESETS = [
-  { id: "leather", label: "Leather", color: "#2b231d", rough: 0.7, metal: 0.1 },
-  { id: "carbon", label: "Carbon Fiber", color: "#1a1a1a", rough: 0.3, metal: 0.5 },
-  { id: "metal", label: "Brushed Metal", color: "#a8a8a8", rough: 0.25, metal: 0.9 },
-  { id: "plastic", label: "Matte Plastic", color: "#3a3a3a", rough: 0.5, metal: 0.0 },
+// ---------------------------------------------------------
+// TEXTURE PRESETS
+// ---------------------------------------------------------
+
+const TEXTURE_PRESETS: MaterialPreset[] = [
+  {
+    id: "reset",
+    label: "Reset / None",
+  },
+  {
+    id: "leather",
+    label: "Leather",
+    color: "#2b231d",
+    rough: 0.7,
+    metal: 0.1,
+    textureUrl: "/textures/leather/diffuse.jpg",
+    normalUrl: "/textures/leather/normal.jpg",
+  },
+  {
+    id: "carbon",
+    label: "Carbon Fiber",
+    color: "#1a1a1a",
+    rough: 0.3,
+    metal: 0.5,
+    textureUrl: "/textures/carbon/diffuse.jpg",
+    normalUrl: "/textures/carbon/normal.jpg",
+  },
+  {
+    id: "metal",
+    label: "Brushed Metal",
+    color: "#a8a8a8",
+    rough: 0.25,
+    metal: 0.9,
+  },
+  {
+    id: "wood-finish",
+    label: "Wood",
+    color: "#8b5a2b",
+    rough: 0.6,
+    metal: 0.0,
+    textureUrl: "/textures/wood/diffuse.jpg",
+    normalUrl: "/textures/wood/normal.jpg",
+  },
+  {
+    id: "plastic",
+    label: "Matte Plastic",
+    color: "#3a3a3a",
+    rough: 0.5,
+    metal: 0.0,
+  },
 ];
 
-// 3 Curated Background Environment Presets
+// ---------------------------------------------------------
+// BACKGROUND PRESETS
+// ---------------------------------------------------------
+
 const BG_PRESETS = [
   {
     id: "emerald",
     label: "Emerald",
-    value: "radial-gradient(circle at 50% 45%, #1d4034 0%, #0c1c16 55%, #030805 100%)",
-    color: "#1d4034",
+    value:
+      "radial-gradient(circle at 50% 45%, #1d4034 0%, #0c1c16 55%, #030805 100%)",
   },
   {
     id: "charcoal",
     label: "Charcoal",
-    value: "radial-gradient(circle at center, #2a2d32 0%, #111215 70%, #0a0b0d 100%)",
-    color: "#2a2d32",
+    value:
+      "radial-gradient(circle at center, #2a2d32 0%, #111215 70%, #0a0b0d 100%)",
   },
   {
     id: "light",
     label: "Light",
-    value: "radial-gradient(circle at 50% 35%, #f8f9fa 0%, #e2e4e8 65%, #c8cbd1 100%)",
-    color: "#e2e4e8",
+    value:
+      "radial-gradient(circle at 50% 35%, #f8f9fa 0%, #e2e4e8 65%, #c8cbd1 100%)",
   },
 ];
 
+// ---------------------------------------------------------
+// ORIGINAL MATERIAL TYPE
+// ---------------------------------------------------------
+
+type OriginalMaterial = {
+  color: string;
+  rough: number;
+  metal: number;
+};
+
+// ---------------------------------------------------------
+// COMPONENT
+// ---------------------------------------------------------
+
 export default function EditorViewer() {
-  const [show, setShow] = useState<"earbuds" | "case">("earbuds");
-  const [selectedMeshes, setSelectedMeshes] = useState<THREE.Mesh[]>([]);
+  const [show, setShow] =
+    useState<"earbuds" | "case">("earbuds");
 
-  // Viewport Background State (Defaults to Emerald)
-  const [bgGradient, setBgGradient] = useState<string>(BG_PRESETS[0].value);
+  const [selectedMeshes, setSelectedMeshes] =
+    useState<THREE.Mesh[]>([]);
 
-  // Retraction toggle state for right sidebar (closed by default on devices below md)
-  const [isRightOpen, setIsRightOpen] = useState(false);
+  const [bgGradient, setBgGradient] =
+    useState<string>(BG_PRESETS[0].value);
 
-  // One-time floating helper overlay message state
-  const [hasSelectedComponentOnce, setHasSelectedComponentOnce] = useState(false);
+  const [isRightOpen, setIsRightOpen] =
+    useState(false);
 
-  // Dynamic material adjustment state
-  const [roughness, setRoughness] = useState<number>(0.5);
-  const [metalness, setMetalness] = useState<number>(0.5);
-  const [hexColor, setHexColor] = useState<string>("#ffffff");
+  const [isLidOpen, setIsLidOpen] =
+    useState(true);
 
-  // Track active texture preset selection
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [hasSelectedComponentOnce, setHasSelectedComponentOnce] =
+    useState(false);
 
-  const sceneRef = useRef<THREE.Group>(null);
+  // -------------------------------------------------------
+  // MATERIAL STATE PER MATERIAL
+  // -------------------------------------------------------
 
-  // Handle default sidebar visibility based on screen width on initial mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (window.innerWidth >= 768) {
-        setIsRightOpen(true);
-      }
-    }
-  }, []);
+  const [materialStates, setMaterialStates] =
+    useState<Record<string, MaterialState>>({});
 
-  // Sync state whenever selected meshes change
-  useEffect(() => {
-    if (selectedMeshes.length > 0) {
-      setHasSelectedComponentOnce(true);
+  // -------------------------------------------------------
+  // ORIGINAL MATERIALS
+  // Captured only once
+  // -------------------------------------------------------
 
-      const targetMesh =
-        selectedMeshes.find(
-          (m) => (m.material as THREE.MeshStandardMaterial)?.name === "case_innerplastic"
-        ) || selectedMeshes[0];
+  const originalMaterialsRef =
+    useRef<Record<string, OriginalMaterial>>({});
 
-      const mat = targetMesh.material as THREE.MeshStandardMaterial;
-      if (mat) {
-        if (mat.roughness !== undefined) setRoughness(mat.roughness);
-        if (mat.metalness !== undefined) setMetalness(mat.metalness);
-        if (mat.color) setHexColor(`#${mat.color.getHexString()}`);
-      }
-    } else {
-      setActivePresetId(null);
-    }
-  }, [selectedMeshes]);
+  const sceneRef =
+    useRef<THREE.Group>(null);
 
-  // Traverses scene graph to find and select matching active meshes
-  const handleSelectMaterial = useCallback((targetMatNames: string[]) => {
-    if (!sceneRef.current) return;
+  // -------------------------------------------------------
+  // GET MATERIAL NAME
+  // -------------------------------------------------------
 
-    const matchingMeshes: THREE.Mesh[] = [];
-    sceneRef.current.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.visible) {
-        const mat = child.material as THREE.MeshStandardMaterial;
-        if (mat && targetMatNames.includes(mat.name)) {
-          matchingMeshes.push(child);
-        }
-      }
-    });
-
-    if (matchingMeshes.length > 0) {
-      setIsRightOpen(true);
-      setHasSelectedComponentOnce(true);
-    }
-
-    setSelectedMeshes((prev) => {
-      const prevNames = prev
-        .map((m) => (m.material as THREE.MeshStandardMaterial).name)
-        .sort()
-        .join(",");
-      const nextNames = matchingMeshes
-        .map((m) => (m.material as THREE.MeshStandardMaterial).name)
-        .sort()
-        .join(",");
-
-      if (prevNames === nextNames) return prev;
-      return matchingMeshes;
-    });
-  }, []);
-
-  // Update Material Properties across selected meshes
-  const updateMaterialProperty = (
-    key: "roughness" | "metalness" | "color",
-    val: number | string
+  const getMaterialName = (
+    mesh: THREE.Mesh
   ) => {
-    selectedMeshes.forEach((mesh) => {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      if (!mat) return;
+    const mat =
+      mesh.material as THREE.MeshStandardMaterial;
 
-      if (key === "roughness") {
-        if (mat.name !== "case_glossinner") {
-          mat.roughness = val as number;
-        }
-        setRoughness(val as number);
-      } else if (key === "metalness") {
-        mat.metalness = val as number;
-        setMetalness(val as number);
-      } else if (key === "color") {
-        mat.color.set(val as string);
-        setHexColor(val as string);
-      }
-      mat.needsUpdate = true;
-    });
+    return mat.name;
   };
 
-  const activeMaterialList = show === "earbuds" ? EARBUD_MATERIALS : CASE_MATERIALS;
+  // -------------------------------------------------------
+  // CAPTURE ORIGINAL MATERIAL
+  // -------------------------------------------------------
+
+  const captureOriginalMaterial = useCallback(
+    (mesh: THREE.Mesh) => {
+      const mat =
+        mesh.material as THREE.MeshStandardMaterial;
+
+      if (!mat || !mat.name) return;
+
+      if (!originalMaterialsRef.current[mat.name]) {
+        originalMaterialsRef.current[mat.name] = {
+          color: `#${mat.color.getHexString()}`,
+          rough: mat.roughness,
+          metal: mat.metalness,
+        };
+      }
+    },
+    []
+  );
+
+  // -------------------------------------------------------
+  // SELECT MATERIAL
+  // -------------------------------------------------------
+
+  const handleSelectMaterial = useCallback(
+    (targetMatNames: string[]) => {
+      if (!sceneRef.current) return;
+
+      const matchingMeshes: THREE.Mesh[] = [];
+
+      sceneRef.current.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+
+        if (!child.visible) return;
+
+        const mat =
+          child.material as THREE.MeshStandardMaterial;
+
+        if (
+          mat &&
+          targetMatNames.includes(mat.name)
+        ) {
+          captureOriginalMaterial(child);
+          matchingMeshes.push(child);
+        }
+      });
+
+      if (matchingMeshes.length === 0) return;
+
+      setIsRightOpen(true);
+      setHasSelectedComponentOnce(true);
+
+      setSelectedMeshes((prev) => {
+        const prevNames = prev
+          .map((m) => getMaterialName(m))
+          .sort()
+          .join(",");
+
+        const nextNames = matchingMeshes
+          .map((m) => getMaterialName(m))
+          .sort()
+          .join(",");
+
+        if (prevNames === nextNames) {
+          return prev;
+        }
+
+        return matchingMeshes;
+      });
+    },
+    [captureOriginalMaterial]
+  );
+
+  // -------------------------------------------------------
+  // CREATE MATERIAL STATE WHEN SELECTED
+  // -------------------------------------------------------
+
+  useEffect(() => {
+    if (selectedMeshes.length === 0) return;
+
+    selectedMeshes.forEach((mesh) => {
+      captureOriginalMaterial(mesh);
+    });
+
+    const targetMesh =
+      selectedMeshes.find(
+        (m) =>
+          getMaterialName(m) ===
+          "case_innerplastic"
+      ) || selectedMeshes[0];
+
+    const materialName =
+      getMaterialName(targetMesh);
+
+    const original =
+      originalMaterialsRef.current[
+      materialName
+      ];
+
+    if (!original) return;
+
+    setMaterialStates((prev) => {
+      // IMPORTANT:
+      // If state already exists, DON'T overwrite it.
+      if (prev[materialName]) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [materialName]: {
+          presetId: null,
+          rough: original.rough,
+          metal: original.metal,
+          color: original.color,
+          presetValues: {},
+        },
+      };
+
+    });
+  }, [
+    selectedMeshes,
+    captureOriginalMaterial,
+  ]);
+
+  // -------------------------------------------------------
+  // CURRENT MATERIAL
+  // -------------------------------------------------------
 
   const activeMaterialName =
     selectedMeshes.length > 0
-      ? (selectedMeshes[0].material as THREE.MeshStandardMaterial).name
+      ? getMaterialName(selectedMeshes[0])
       : "";
 
-  const activeComponent = activeMaterialList.find((item) =>
-    item.matNames.includes(activeMaterialName)
-  );
-  const activeComponentId = activeComponent ? activeComponent.id : "";
+  const activeMaterialList =
+    show === "earbuds"
+      ? EARBUD_MATERIALS
+      : CASE_MATERIALS;
 
-  const isEarbudLogo = activeMaterialName === "Material";
-  const isCaseLogo = activeMaterialName === "case_logo.001";
-  const isLogoSelected = isEarbudLogo || isCaseLogo;
+  const activeComponent =
+    activeMaterialList.find((item) =>
+      item.matNames.includes(
+        activeMaterialName
+      )
+    );
 
-  const isSilicone = activeMaterialName === "silicone_tws";
-  const isInnerMesh = activeMaterialName === "innermesh_tws";
-  const isSiliconeOrMesh = isSilicone || isInnerMesh;
+  const activeComponentId =
+    activeComponent?.id ?? "";
+
+  // -------------------------------------------------------
+  // CURRENT MATERIAL STATE
+  // -------------------------------------------------------
+
+  const activeMaterialState =
+    activeMaterialName
+      ? materialStates[activeMaterialName] ?? null
+      : null;
+
+  // -------------------------------------------------------
+  // CURRENT PRESET
+  // -------------------------------------------------------
+
+  const activePreset =
+    TEXTURE_PRESETS.find(
+      (preset) =>
+        preset.id ===
+        activeMaterialState?.presetId
+    ) ?? null;
+
+  // -------------------------------------------------------
+  // CURRENT UI VALUES
+  // -------------------------------------------------------
+
+  const roughness =
+    activeMaterialState?.rough ?? 0.5;
+
+  const metalness =
+    activeMaterialState?.metal ?? 0;
+
+  const hexColor =
+    activeMaterialState?.color ?? "#ffffff";
+
+  // -------------------------------------------------------
+  // MANUAL ROUGHNESS
+  // -------------------------------------------------------
+
+  const updateRoughness = (value: number) => {
+    if (!activeMaterialName) return;
+
+    setMaterialStates((prev) => {
+      const current = prev[activeMaterialName];
+
+      if (!current) return prev;
+
+      const presetId = current.presetId;
+
+      return {
+        ...prev,
+
+        [activeMaterialName]: {
+          ...current,
+
+          rough: value,
+
+          presetValues: presetId
+            ? {
+              ...current.presetValues,
+
+              [presetId]: {
+                ...current.presetValues?.[presetId],
+                rough: value,
+              },
+            }
+            : current.presetValues,
+        },
+      };
+    });
+  };
+
+  // -------------------------------------------------------
+  // MANUAL METALNESS
+  // -------------------------------------------------------
+
+  const updateMetalness = (value: number) => {
+    if (!activeMaterialName) return;
+
+    setMaterialStates((prev) => {
+      const current = prev[activeMaterialName];
+
+      if (!current) return prev;
+
+      const presetId = current.presetId;
+
+      return {
+        ...prev,
+
+        [activeMaterialName]: {
+          ...current,
+
+          metal: value,
+
+          presetValues: presetId
+            ? {
+              ...current.presetValues,
+
+              [presetId]: {
+                ...current.presetValues?.[presetId],
+                metal: value,
+              },
+            }
+            : current.presetValues,
+        },
+      };
+    });
+  };
+
+  // -------------------------------------------------------
+  // COLOR
+  // -------------------------------------------------------
+
+  const updateColor = (value: string) => {
+    if (!activeMaterialName) return;
+
+    setMaterialStates((prev) => ({
+      ...prev,
+      [activeMaterialName]: {
+        ...prev[activeMaterialName],
+        color: value,
+      },
+    }));
+  };
+
+  // -------------------------------------------------------
+  // APPLY PRESET
+  // -------------------------------------------------------
+
+  const applyPreset = (preset: MaterialPreset) => {
+    if (!activeMaterialName) return;
+    // RESET
+    if (preset.id === "reset") {
+      const original =
+        originalMaterialsRef.current[activeMaterialName];
+
+      if (!original) return;
+
+      setMaterialStates((prev) => {
+        const current = prev[activeMaterialName];
+
+        if (!current) return prev;
+
+        return {
+          ...prev,
+          [activeMaterialName]: {
+            ...current,
+            presetId: null,
+            rough: original.rough,
+            metal: original.metal,
+            color: original.color,
+            presetValues: {},
+          },
+        };
+      });
+
+      return;
+    }
+
+    setMaterialStates((prev) => {
+      const current = prev[activeMaterialName];
+
+      if (!current) return prev;
+
+      // Check if this preset already has saved slider values
+      const saved = current.presetValues?.[preset.id];
+
+      const rough =
+        saved?.rough ??
+        preset.rough ??
+        current.rough;
+
+      const metal =
+        saved?.metal ??
+        preset.metal ??
+        current.metal;
+
+      return {
+        ...prev,
+        [activeMaterialName]: {
+          ...current,
+
+          presetId: preset.id,
+
+          rough,
+          metal,
+
+          presetValues: {
+            ...current.presetValues,
+
+            [preset.id]: {
+              rough,
+              metal,
+            },
+          },
+        },
+      };
+    });
+  };
+
+  // -------------------------------------------------------
+  // PRESET DISABLE RULES
+  // -------------------------------------------------------
+
+  const isEarbudLogo =
+    activeMaterialName === "Material";
+
+  const isCaseLogo =
+    activeMaterialName ===
+    "case_logo.001";
+
+  const isLogoSelected =
+    isEarbudLogo ||
+    isCaseLogo;
+
+  const isSilicone =
+    activeMaterialName ===
+    "silicone_tws";
+
+  const isInnerMesh =
+    activeMaterialName ===
+    "innermesh_tws";
+
+  const isSiliconeOrMesh =
+    isSilicone ||
+    isInnerMesh;
 
   const isCaseInnerTray =
-    activeMaterialName === "case_glossinner" ||
-    activeMaterialName === "case_innerplastic";
+    activeMaterialName ===
+    "case_glossinner" ||
+    activeMaterialName ===
+    "case_innerplastic";
 
-  const isMetallicDisabled =
-    activePresetId === "leather" ||
-    activePresetId === "carbon" ||
-    isSiliconeOrMesh ||
-    isCaseInnerTray;
+  // -------------------------------------------------------
+  // RENDER
+  // -------------------------------------------------------
 
   return (
     <div
-      className="relative h-screen w-full overflow-hidden text-white transition-all duration-500"
-      style={{ background: bgGradient }}
+      className="relative h-screen w-screen overflow-hidden text-white transition-all duration-500"
+      style={{
+        background: bgGradient,
+      }}
     >
-      {/* 3D Canvas */}
-      <div className="absolute inset-0">
+      {/* =====================================================
+          CANVAS
+      ===================================================== */}
+
+      <div className="w-full h-full overflow-hidden">
         <Canvas
           gl={{
             antialias: true,
-            powerPreference: "high-performance",
-            toneMapping: THREE.ACESFilmicToneMapping,
+            powerPreference:
+              "high-performance",
+            toneMapping:
+              THREE.ACESFilmicToneMapping,
             preserveDrawingBuffer: true,
           }}
           dpr={[1, 2]}
-          onPointerMissed={() => setSelectedMeshes([])}
         >
-          <Environment files="/hdr/dancing_hall_2k.hdr" environmentIntensity={0.8} />
+          <Environment
+            files="/hdr/dancing_hall_2k.hdr"
+            environmentIntensity={0.8}
+          />
 
           <group ref={sceneRef}>
             <EditorModel
               show={show}
-              selectedMeshes={selectedMeshes}
-              setSelectedMeshes={(meshes) => {
-                setSelectedMeshes(meshes);
-                if (meshes.length > 0) {
+              selectedMeshes={
+                selectedMeshes
+              }
+              lidstatus={isLidOpen}
+              activeMaterialState={
+                activeMaterialState
+              }
+              activePreset={activePreset}
+              setSelectedMeshes={(
+                meshes
+              ) => {
+                meshes.forEach(
+                  captureOriginalMaterial
+                );
+
+                setSelectedMeshes(
+                  meshes
+                );
+
+                if (
+                  meshes.length > 0
+                ) {
                   setIsRightOpen(true);
-                  setHasSelectedComponentOnce(true);
+
+                  setHasSelectedComponentOnce(
+                    true
+                  );
                 }
               }}
             />
           </group>
 
-          <OrbitControls minDistance={0.2} />
+          <OrbitControls
+            minDistance={0.2}
+          />
         </Canvas>
       </div>
 
-      {/* --- ONE-TIME INITIAL HELPER MESSAGE (TOP OF SCREEN) --- */}
+      {/* =====================================================
+          HELPER
+      ===================================================== */}
+
       {!hasSelectedComponentOnce && (
         <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-lg text-center pointer-events-none">
           <div className="rounded-2xl bg-black/60 px-4 py-3 backdrop-blur-xl border border-white/10 shadow-2xl text-xs sm:text-sm text-white/80 font-medium">
@@ -240,284 +685,518 @@ export default function EditorViewer() {
         </div>
       )}
 
-      {/* --- FLOATING VIEW TOGGLE --- */}
-      <div className="absolute bottom-6 sm:bottom-10 md:bottom-14 left-1/2 -translate-x-1/2 z-20 flex rounded-xl sm:rounded-2xl bg-black/60 p-1 sm:p-2 backdrop-blur-xl border border-white/10 shadow-2xl transition-all">
-        <button
-          onClick={() => {
-            setShow("earbuds");
-            setSelectedMeshes([]);
-            setActivePresetId(null);
-          }}
-          className={`rounded-lg sm:rounded-xl px-3.5 py-1.5 sm:px-6 sm:py-2.5 text-xs sm:text-base font-medium transition-all ${
-            show === "earbuds"
-              ? "bg-white text-black shadow-lg"
-              : "text-white/70 hover:text-white"
-          }`}
-        >
-          Earbuds
-        </button>
+      {/* =====================================================
+          BOTTOM BAR
+      ===================================================== */}
 
-        <button
-          onClick={() => {
-            setShow("case");
-            setSelectedMeshes([]);
-            setActivePresetId(null);
-          }}
-          className={`rounded-lg sm:rounded-xl px-3.5 py-1.5 sm:px-6 sm:py-2.5 text-xs sm:text-base font-medium transition-all ${
-            show === "case"
+      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center rounded-4xl bg-black/60 p-2 backdrop-blur-xl border border-white/10 shadow-2xl transition-all duration-300">
+
+        <div className="flex bg-white/5 rounded-4xl">
+
+          <button
+            onClick={() => {
+              setShow("earbuds");
+              setSelectedMeshes([]);
+              setIsRightOpen(false);
+            }}
+            className={`rounded-4xl px-5 py-2 text-sm font-medium transition-all ${show === "earbuds"
               ? "bg-white text-black shadow-lg"
               : "text-white/70 hover:text-white"
-          }`}
+              }`}
+          >
+            Earbuds
+          </button>
+
+          <button
+            onClick={() => {
+              setShow("case");
+              setSelectedMeshes([]);
+              setIsRightOpen(false);
+            }}
+            className={`rounded-4xl px-5 py-2 text-sm font-medium transition-all ${show === "case"
+              ? "bg-white text-black shadow-lg"
+              : "text-white/70 hover:text-white"
+              }`}
+          >
+            Case
+          </button>
+
+        </div>
+
+        <div
+          className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out ${show === "case"
+            ? "max-w-[170px] opacity-100 ml-2"
+            : "max-w-0 opacity-0 ml-0 pointer-events-none"
+            }`}
         >
-          Case
-        </button>
+
+          <div className="h-4 w-[1px] bg-white/15 my-auto shrink-0" />
+
+          <button
+            onClick={() =>
+              setIsLidOpen(
+                (prev) => !prev
+              )
+            }
+            className={`flex items-center gap-1.5 rounded-4xl px-4 py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-all ${isLidOpen
+              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30"
+              : "bg-white/10 text-white hover:bg-white/20"
+              }`}
+          >
+            <span>
+              {isLidOpen
+                ? "Close Lid"
+                : "Open Lid"}
+            </span>
+          </button>
+
+        </div>
       </div>
 
-      {/* --- RIGHT SIDEBAR TRIGGER (When retracted) --- */}
+      {/* =====================================================
+          SIDEBAR OPEN BUTTON
+      ===================================================== */}
+
       {!isRightOpen && (
         <button
-          onClick={() => setIsRightOpen(true)}
+          onClick={() =>
+            setIsRightOpen(true)
+          }
           className="absolute right-4 top-6 z-30 flex h-10 w-10 items-center justify-center rounded-xl bg-black/70 backdrop-blur-xl border border-white/10 text-white/80 transition-all hover:bg-black/90 hover:text-white hover:scale-105 shadow-xl"
-          title="Expand Right Sidebar"
         >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
       )}
 
-      {/* --- RIGHT SIDEBAR INSPECTOR --- */}
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
+
       <aside
-        className={`absolute right-4 sm:right-6 top-6 bottom-6 w-80 max-w-[calc(100vw-32px)] rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 flex flex-col z-30 overflow-hidden transition-all duration-300 ease-in-out ${
-          isRightOpen
-            ? "translate-x-0 opacity-100"
-            : "translate-x-[calc(100%+24px)] opacity-0 pointer-events-none"
-        }`}
+        className={`absolute right-4 sm:right-6 top-6 h-[calc(100vh-48px)] w-80 max-w-[calc(100vw-32px)] rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 flex flex-col z-30 overflow-hidden transition-all duration-300 ease-in-out ${isRightOpen
+          ? "translate-x-0 opacity-100"
+          : "translate-x-full opacity-0 pointer-events-none"
+          }`}
       >
-        {/* FIXED HEADER WITH CLOSE BUTTON */}
+
+        {/* HEADER */}
+
         <div className="flex items-center justify-between p-5 pb-3 border-b border-white/10 shrink-0 bg-black/20">
+
           <span className="text-xs font-semibold uppercase tracking-wider text-white/40">
             Material Inspector
           </span>
+
           <button
-            onClick={() => setIsRightOpen(false)}
+            onClick={() =>
+              setIsRightOpen(false)
+            }
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all"
-            title="Retract Sidebar"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
+
         </div>
 
-        {/* SCROLLABLE BODY CONTENT (Clean wrapper without trailing padding) */}
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
-          {/* Viewport Environment Background Switcher */}
+        {/* BODY */}
+
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
+
+          {/* BACKGROUND */}
+
           <div className="flex flex-col gap-2">
+
             <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
               Background Theme
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {BG_PRESETS.map((preset) => {
-                const isActive = bgGradient === preset.value;
-                return (
-                  <button
-                    key={preset.id}
-                    onClick={() => setBgGradient(preset.value)}
-                    className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
-                      isActive
-                        ? "bg-white/15 border-cyan-400 text-white shadow-md"
-                        : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <span
-                      className="h-3 w-3 rounded-full border border-white/30"
-                      style={{ backgroundColor: preset.color }}
-                    />
-                    {preset.label}
-                  </button>
-                );
-              })}
+
+            <div className="flex rounded-xl bg-white/20 p-1.5 backdrop-blur-xl border border-white/20 shadow-2xl">
+
+              {BG_PRESETS.map(
+                (preset) => {
+                  const isActive =
+                    bgGradient ===
+                    preset.value;
+
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() =>
+                        setBgGradient(
+                          preset.value
+                        )
+                      }
+                      className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${isActive
+                        ? "bg-white text-black shadow-lg"
+                        : "text-white/70 hover:text-white"
+                        }`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                }
+              )}
+
             </div>
           </div>
 
           <hr className="border-white/10" />
 
-          {/* Component Selection Dropdown */}
+          {/* COMPONENT SELECT */}
+
           <div className="flex flex-col gap-2">
+
             <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
               Active Component
             </label>
+
             <div className="relative">
+
               <select
-                value={activeComponentId}
+                value={
+                  activeComponentId
+                }
                 onChange={(e) => {
-                  const selected = activeMaterialList.find(
-                    (item) => item.id === e.target.value
-                  );
+                  const selected =
+                    activeMaterialList.find(
+                      (item) =>
+                        item.id ===
+                        e.target.value
+                    );
+
                   if (selected) {
-                    handleSelectMaterial(selected.matNames);
+                    handleSelectMaterial(
+                      selected.matNames
+                    );
                   } else {
-                    setSelectedMeshes([]);
+                    setSelectedMeshes(
+                      []
+                    );
                   }
                 }}
                 className="w-full appearance-none rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
               >
-                <option value="" className="bg-neutral-900 text-white/60">
+
+                <option
+                  value=""
+                  className="bg-neutral-900 text-white/60"
+                >
                   -- Select a component --
                 </option>
-                {activeMaterialList.map((item) => (
-                  <option
-                    key={item.id}
-                    value={item.id}
-                    className="bg-neutral-900 text-white"
-                  >
-                    {item.label}
-                  </option>
-                ))}
+
+                {activeMaterialList.map(
+                  (item) => (
+                    <option
+                      key={item.id}
+                      value={item.id}
+                      className="bg-neutral-900 text-white"
+                    >
+                      {item.label}
+                    </option>
+                  )
+                )}
+
               </select>
 
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white/60">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
+
               </div>
             </div>
           </div>
 
+          {/* =================================================
+              MATERIAL CONTROLS
+          ================================================= */}
+
           {selectedMeshes.length > 0 ? (
+
             <div className="flex flex-col gap-6">
-              {/* Texture Presets (2x2 Grid) */}
-              <div
-                className={`flex flex-col gap-3 transition-opacity ${
-                  isSiliconeOrMesh ? "opacity-30 pointer-events-none" : "opacity-100"
-                }`}
-              >
+
+              {/* =================================================
+                  TEXTURES
+              ================================================= */}
+
+              <div className="flex flex-col gap-3">
+
                 <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
                   Texture Presets
                 </label>
+
                 <div className="grid grid-cols-2 gap-3">
-                  {TEXTURE_PRESETS.map((preset) => {
-                    const isPresetDisabled =
-                      isSiliconeOrMesh ||
-                      (isLogoSelected && (preset.id === "leather" || preset.id === "carbon")) ||
-                      (isCaseInnerTray && preset.id !== "plastic");
 
-                    const isSelected = activePresetId === preset.id;
+                  {TEXTURE_PRESETS.map(
+                    (preset) => {
 
-                    return (
-                      <button
-                        key={preset.id}
-                        disabled={isPresetDisabled}
-                        onClick={() => {
-                          setActivePresetId(preset.id);
-                          updateMaterialProperty("roughness", preset.rough);
-                          updateMaterialProperty("metalness", preset.metal);
-                          updateMaterialProperty("color", preset.color);
-                        }}
-                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all group ${
-                          isPresetDisabled
+                      const isPresetDisabled =
+                        (isSiliconeOrMesh && preset.id !== "reset") ||
+                        (isLogoSelected &&
+                          (
+                            preset.id === "leather" ||
+                            preset.id === "carbon" ||
+                            preset.id === "wood-finish"
+                          )) ||
+                        (isCaseInnerTray &&
+                          preset.id !== "reset" &&
+                          preset.id !== "plastic");
+
+                      const isSelected =
+                        activeMaterialState?.presetId ===
+                        preset.id;
+
+                      return (
+                        <button
+                          key={preset.id}
+                          disabled={
+                            isPresetDisabled
+                          }
+                          onClick={() =>
+                            applyPreset(
+                              preset
+                            )
+                          }
+                          className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all group ${isPresetDisabled
                             ? "bg-white/5 border-white/5 opacity-40 cursor-not-allowed"
                             : isSelected
-                            ? "bg-cyan-500/10 border-cyan-400 shadow-lg"
-                            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 cursor-pointer"
-                        }`}
-                      >
-                        <div
-                          className="h-10 w-10 rounded-full border border-white/20 shadow-inner group-hover:scale-105 transition-transform"
-                          style={{ backgroundColor: preset.color }}
-                        />
-                        <span className="text-xs text-white/80 font-medium">
-                          {preset.label}
-                        </span>
-                      </button>
-                    );
-                  })}
+                              ? "bg-cyan-500/10 border-cyan-400 shadow-lg"
+                              : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 cursor-pointer"
+                            }`}
+                        >
+
+                          <div
+                            className="h-10 w-10 rounded-full border border-white/20 shadow-inner group-hover:scale-105 transition-transform"
+                            style={{
+                              backgroundColor:
+                                preset.color ??
+                                "transparent",
+                            }}
+                          />
+
+                          <span className="text-xs text-white/80 font-medium">
+                            {preset.label}
+                          </span>
+
+                        </button>
+                      );
+                    }
+                  )}
+
                 </div>
               </div>
 
-              {/* Material Configurator Sliders */}
+              {/* =================================================
+                  MATERIAL CONFIGURATOR
+              ================================================= */}
+
               <div className="flex flex-col gap-4">
+
                 <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
                   Material Configurator
                 </label>
 
-                {/* Roughness Slider */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between text-xs text-white/70">
-                    <span>Roughness</span>
-                    <span>{Math.round(roughness * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={roughness}
-                    onChange={(e) => updateMaterialProperty("roughness", parseFloat(e.target.value))}
-                    className="w-full accent-cyan-400 bg-white/20 h-1.5 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
+                {/* =================================================
+                    ROUGHNESS
+                    ONLY METAL + PLASTIC
+                ================================================= */}
 
-                {/* Metallic Slider */}
-                <div
-                  className={`flex flex-col gap-1.5 transition-opacity ${
-                    isMetallicDisabled ? "opacity-30 pointer-events-none" : "opacity-100"
-                  }`}
-                >
-                  <div className="flex justify-between text-xs text-white/70">
-                    <span>Metallic</span>
-                    <span>{Math.round(metalness * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    disabled={isMetallicDisabled}
-                    value={metalness}
-                    onChange={(e) => updateMaterialProperty("metalness", parseFloat(e.target.value))}
-                    className="w-full accent-cyan-400 bg-white/20 h-1.5 rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed"
-                  />
-                </div>
+                {(
+                  activeMaterialState?.presetId ===
+                  "metal" ||
+                  activeMaterialState?.presetId ===
+                  "plastic"
+                ) && (
+
+                    <div className="flex flex-col gap-1.5">
+
+                      <div className="flex justify-between text-xs text-white/70">
+
+                        <span>
+                          Roughness
+                        </span>
+
+                        <span>
+                          {Math.round(
+                            roughness * 100
+                          )}
+                          %
+                        </span>
+
+                      </div>
+
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={roughness}
+                        onChange={(e) =>
+                          updateRoughness(
+                            parseFloat(
+                              e.target.value
+                            )
+                          )
+                        }
+                        className="w-full accent-cyan-400 bg-white/20 h-1.5 rounded-lg appearance-none cursor-pointer"
+                      />
+
+                    </div>
+                  )}
+
+                {/* =================================================
+                    METALLIC
+                    ONLY METAL
+                ================================================= */}
+
+                {activeMaterialState?.presetId ===
+                  "metal" && (
+
+                    <div className="flex flex-col gap-1.5">
+
+                      <div className="flex justify-between text-xs text-white/70">
+
+                        <span>
+                          Metallic
+                        </span>
+
+                        <span>
+                          {Math.round(
+                            metalness * 100
+                          )}
+                          %
+                        </span>
+
+                      </div>
+
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={metalness}
+                        onChange={(e) =>
+                          updateMetalness(
+                            parseFloat(
+                              e.target.value
+                            )
+                          )
+                        }
+                        className="w-full accent-cyan-400 bg-white/20 h-1.5 rounded-lg appearance-none cursor-pointer"
+                      />
+
+                    </div>
+                  )}
+
               </div>
 
-              {/* Color Section with Color Wheel & HEX Input */}
+              {/* =================================================
+                  COLOR
+              ================================================= */}
+
               <div className="flex flex-col gap-3">
+
                 <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
                   Color
                 </label>
+
                 <div className="flex items-center gap-3 bg-white/5 p-2.5 rounded-xl border border-white/10">
+
                   <input
                     type="color"
-                    value={hexColor}
-                    onChange={(e) => updateMaterialProperty("color", e.target.value)}
-                    style={{ colorScheme: "dark" }}
+                    value={
+                      /^#[0-9A-F]{6}$/i.test(
+                        hexColor
+                      )
+                        ? hexColor
+                        : "#ffffff"
+                    }
+                    onChange={(e) =>
+                      updateColor(
+                        e.target.value
+                      )
+                    }
+                    style={{
+                      colorScheme: "dark",
+                    }}
                     className="h-10 w-10 shrink-0 rounded-lg cursor-pointer bg-transparent border-0 p-0"
                   />
+
                   <div className="flex flex-col flex-1">
-                    <span className="text-[10px] text-white/40 uppercase font-semibold">HEX Code</span>
+
+                    <span className="text-[10px] text-white/40 uppercase font-semibold">
+                      HEX Code
+                    </span>
+
                     <input
                       type="text"
                       value={hexColor}
                       onChange={(e) => {
-                        const val = e.target.value;
-                        setHexColor(val);
-                        if (/^#[0-9A-F]{6}$/i.test(val)) {
-                          updateMaterialProperty("color", val);
+                        const value =
+                          e.target.value;
+
+                        if (
+                          /^#[0-9A-F]{6}$/i.test(
+                            value
+                          )
+                        ) {
+                          updateColor(
+                            value
+                          );
                         }
                       }}
                       className="bg-transparent text-sm font-mono text-white focus:outline-none uppercase"
                     />
+
                   </div>
                 </div>
               </div>
+
             </div>
+
           ) : (
+
             <div className="flex-1 flex items-center justify-center text-center text-xs text-white/40">
               Choose a component from the dropdown above or click directly on the 3D model.
             </div>
+
           )}
+
         </div>
       </aside>
     </div>
