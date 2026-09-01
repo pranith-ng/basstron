@@ -3,7 +3,7 @@
 @font-face {
   font-family: "Boxing";
   src: url("/fonts/Boxing-Regular.woff2") format("woff2"),
-       url("/fonts/Boxing-Regular.woff") format("woff");
+    url("/fonts/Boxing-Regular.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -42,17 +42,39 @@ body {
   background: radial-gradient(circle at center, #2a2d32 0%, #111215 70%, #0a0b0d 100%);
 }
 
-.txt{
-    font-family: var(--font-josefin);
+.txt {
+  font-family: var(--font-josefin);
+}
+
+.scrollbar-hide {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(252, 252, 252, 0.25) transparent;
+  -ms-overflow-style: auto;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .gradientimg {
-  background: linear-gradient(
-    to top,
-    #fff1eb,
-    #b6e7fd,
-    #fff1eb
-  );
+  background: linear-gradient(to top,
+      #fff1eb,
+      #b6e7fd,
+      #fff1eb);
   background-size: 200% 200%;
   animation: gradientMove 10s ease infinite;
 }

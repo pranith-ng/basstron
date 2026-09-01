@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useGLTF, PerspectiveCamera } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import gsap from "gsap";
@@ -38,6 +38,8 @@ type EditorModelProps = {
   lidstatus: boolean;
   activeMaterialState: MaterialState | null;
   activePreset: MaterialPreset | null;
+  cameraRef: React.RefObject<THREE.PerspectiveCamera | null>;
+  controlsRef: React.RefObject<any>;
 };
 
 // Singleton texture loader
@@ -50,7 +52,20 @@ export default function EditorModel({
   lidstatus,
   activeMaterialState,
   activePreset,
+  cameraRef,
+  controlsRef,
 }: EditorModelProps) {
+
+
+  ////// changing camaera zoom for small device
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
+  }, []);
+  ///////////////////////////////////////////
+
   const { scene } = useGLTF("/model/tws_threejs.glb");
 
   const animFrameRef = useRef<number | null>(null);
@@ -63,6 +78,7 @@ export default function EditorModel({
   const leftTws = scene.getObjectByName("left_tws");
   const chargingCase = scene.getObjectByName("chargingcase");
   const chargingCaseLid = scene.getObjectByName("chargingcase_lid");
+
 
   // ---------------------------------------------------------
   // APPLY ACTIVE MATERIAL STATE
@@ -78,17 +94,13 @@ export default function EditorModel({
 
       // -----------------------------------------------------
       // INNER CASE MATERIALS
-      // They act as ONE component for COLOR only.
-      // Keep each material's original roughness + metalness.
       // -----------------------------------------------------
-
       if (
         mat.name === "case_glossinner" ||
         mat.name === "case_innerplastic"
       ) {
         mat.color.set(activeMaterialState.color);
 
-        // Remove preset textures if reset
         if (
           !activeMaterialState.presetId ||
           activeMaterialState.presetId === "reset"
@@ -102,36 +114,40 @@ export default function EditorModel({
       }
 
       // -----------------------------------------------------
-      // NORMAL MATERIALS
+      // 1. FORCE CLEANUP (Prevents Bleeding)
       // -----------------------------------------------------
+      // Immediately detach previous maps so carbon fiber / old normal maps stop rendering
+      mat.map = null;
+      mat.normalMap = null;
+      mat.normalScale.set(1, 1);
 
+      // Set core material properties
       mat.roughness = activeMaterialState.rough;
       mat.metalness = activeMaterialState.metal;
       mat.color.set(activeMaterialState.color);
 
-      // RESET
+      // RESET PRESET
       if (
         !activeMaterialState.presetId ||
         activeMaterialState.presetId === "reset"
       ) {
-        mat.map = null;
-        mat.normalMap = null;
         mat.needsUpdate = true;
         return;
       }
 
-      // -----------------------------------------------------
-      // APPLY PRESET TEXTURE
-      // -----------------------------------------------------
+      // Capture target URLs locally for closure guard
+      const targetPresetId = activePreset?.id;
+      const targetTextureUrl = activePreset?.textureUrl;
+      const targetNormalUrl = activePreset?.normalUrl;
 
-      if (activePreset?.textureUrl) {
-        const textureUrl = activePreset.textureUrl;
-
-        textureLoader.load(textureUrl, (texture) => {
-          if (
-            !activeMaterialState.presetId ||
-            activeMaterialState.presetId !== activePreset.id
-          ) {
+      // -----------------------------------------------------
+      // 2. APPLY DIFFUSE TEXTURE
+      // -----------------------------------------------------
+      if (targetTextureUrl) {
+        textureLoader.load(targetTextureUrl, (texture) => {
+          // Guard: check if preset changed while image was downloading
+          if (activeMaterialState.presetId !== targetPresetId) {
+            texture.dispose();
             return;
           }
 
@@ -143,22 +159,16 @@ export default function EditorModel({
           mat.map = texture;
           mat.needsUpdate = true;
         });
-      } else {
-        mat.map = null;
       }
 
       // -----------------------------------------------------
-      // APPLY NORMAL TEXTURE
+      // 3. APPLY NORMAL MAP
       // -----------------------------------------------------
-
-      if (activePreset?.normalUrl) {
-        const normalUrl = activePreset.normalUrl;
-
-        textureLoader.load(normalUrl, (texture) => {
-          if (
-            !activeMaterialState.presetId ||
-            activeMaterialState.presetId !== activePreset.id
-          ) {
+      if (targetNormalUrl) {
+        textureLoader.load(targetNormalUrl, (texture) => {
+          // Guard: check if preset changed while image was downloading
+          if (activeMaterialState.presetId !== targetPresetId) {
+            texture.dispose();
             return;
           }
 
@@ -167,10 +177,13 @@ export default function EditorModel({
           texture.repeat.set(2, 2);
 
           mat.normalMap = texture;
+
+          const isLeather = targetPresetId?.toLowerCase().includes("leather");
+          const scale = isLeather ? 4 : 1;
+          mat.normalScale.set(scale, scale);
+
           mat.needsUpdate = true;
         });
-      } else {
-        mat.normalMap = null;
       }
 
       mat.needsUpdate = true;
@@ -355,8 +368,9 @@ export default function EditorModel({
   return (
     <>
       <PerspectiveCamera
+        ref={cameraRef}
         makeDefault
-        position={[0, 0.015, 1]}
+        position={[0, 0.015, isMobile ? 1.5 : 1]}
         fov={10}
         near={0.1}
         far={20}

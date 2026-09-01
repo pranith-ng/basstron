@@ -1,6 +1,7 @@
 "use client";
 
 import * as THREE from "three";
+import gsap from "gsap";
 import {
   useState,
   useRef,
@@ -18,6 +19,7 @@ import EditorModel, {
   MaterialPreset,
   MaterialState,
 } from "./EditorModel";
+
 
 // ---------------------------------------------------------
 // COMPONENT LISTS
@@ -90,8 +92,8 @@ const TEXTURE_PRESETS: MaterialPreset[] = [
     id: "leather",
     label: "Leather",
     color: "#2b231d",
-    rough: 0.7,
-    metal: 0.1,
+    rough: 0.8,
+    metal: 0,
     textureUrl: "/textures/leather/diffuse.jpg",
     normalUrl: "/textures/leather/normal.jpg",
   },
@@ -169,6 +171,13 @@ type OriginalMaterial = {
 // ---------------------------------------------------------
 
 export default function EditorViewer() {
+
+  ///////////camera panning ref for orbit controls
+  const controlsRef = useRef<any>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+
+  //////////////////
+
   const [show, setShow] =
     useState<"earbuds" | "case">("earbuds");
 
@@ -187,12 +196,28 @@ export default function EditorViewer() {
   const [hasSelectedComponentOnce, setHasSelectedComponentOnce] =
     useState(false);
 
+
+  // draghelper popup Component state
+  const [showpopup, setShowpopup] = useState<boolean>(true);
+
+  //// dropdown state
+  const [isComponentDropdownOpen, setIsComponentDropdownOpen] =
+    useState<boolean>(false);
+
+
+  // -------------------------------------------------------
+  // color copy mechanism 
+  // 
+  const [copiedColor, setCopiedColor] = useState<string>("");
+  const [colorMessage, setColorMessage] = useState<string>("");
+
   // -------------------------------------------------------
   // MATERIAL STATE PER MATERIAL
   // -------------------------------------------------------
 
   const [materialStates, setMaterialStates] =
     useState<Record<string, MaterialState>>({});
+
 
   // -------------------------------------------------------
   // ORIGINAL MATERIALS
@@ -244,54 +269,54 @@ export default function EditorViewer() {
   // SELECT MATERIAL
   // -------------------------------------------------------
 
-  const handleSelectMaterial = useCallback(
-    (targetMatNames: string[]) => {
-      if (!sceneRef.current) return;
+ const handleSelectMaterial = useCallback(
+  (targetMatNames: string[]) => {
+    if (!sceneRef.current) return;
 
-      const matchingMeshes: THREE.Mesh[] = [];
+    const matchingMeshes: THREE.Mesh[] = [];
 
-      sceneRef.current.traverse((child) => {
-        if (!(child instanceof THREE.Mesh)) return;
+    sceneRef.current.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
 
-        if (!child.visible) return;
+      if (!child.visible) return;
 
-        const mat =
-          child.material as THREE.MeshStandardMaterial;
+      const mat =
+        child.material as THREE.MeshStandardMaterial;
 
-        if (
-          mat &&
-          targetMatNames.includes(mat.name)
-        ) {
-          captureOriginalMaterial(child);
-          matchingMeshes.push(child);
-        }
-      });
+      if (
+        mat &&
+        targetMatNames.includes(mat.name)
+      ) {
+        captureOriginalMaterial(child);
+        matchingMeshes.push(child);
+      }
+    });
 
-      if (matchingMeshes.length === 0) return;
+    if (matchingMeshes.length === 0) return;
 
-      setIsRightOpen(true);
-      setHasSelectedComponentOnce(true);
+    setIsRightOpen(true);
+    setHasSelectedComponentOnce(true);
 
-      setSelectedMeshes((prev) => {
-        const prevNames = prev
-          .map((m) => getMaterialName(m))
-          .sort()
-          .join(",");
+    setSelectedMeshes((prev) => {
+      const prevNames = prev
+        .map((m) => getMaterialName(m))
+        .sort()
+        .join(",");
 
-        const nextNames = matchingMeshes
-          .map((m) => getMaterialName(m))
-          .sort()
-          .join(",");
+      const nextNames = matchingMeshes
+        .map((m) => getMaterialName(m))
+        .sort()
+        .join(",");
 
-        if (prevNames === nextNames) {
-          return prev;
-        }
+      if (prevNames === nextNames) {
+        return prev;
+      }
 
-        return matchingMeshes;
-      });
-    },
-    [captureOriginalMaterial]
-  );
+      return matchingMeshes;
+    });
+  },
+  [captureOriginalMaterial]
+);
 
   // -------------------------------------------------------
   // CREATE MATERIAL STATE WHEN SELECTED
@@ -635,6 +660,8 @@ export default function EditorViewer() {
           <group ref={sceneRef}>
             <EditorModel
               show={show}
+              cameraRef={cameraRef}
+              controlsRef={controlsRef}
               selectedMeshes={
                 selectedMeshes
               }
@@ -668,7 +695,12 @@ export default function EditorViewer() {
           </group>
 
           <OrbitControls
+            ref={controlsRef}
+            target={[0, 0.015, 0]}
             minDistance={0.2}
+            maxDistance={3}
+            enablePan={false}
+
           />
         </Canvas>
       </div>
@@ -678,10 +710,82 @@ export default function EditorViewer() {
       ===================================================== */}
 
       {!hasSelectedComponentOnce && (
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-lg text-center pointer-events-none">
-          <div className="rounded-2xl bg-black/60 px-4 py-3 backdrop-blur-xl border border-white/10 shadow-2xl text-xs sm:text-sm text-white/80 font-medium">
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 md:w-11/12 max-w-lg text-center pointer-events-none">
+          <div className="rounded-2xl bg-white/80 px-4 py-3 backdrop-blur-xl border border-white/10 shadow-2xl text-xs sm:text-sm text-black font-medium">
             Choose a component from the sidebar on the right or click directly on the 3D model.
           </div>
+        </div>
+      )}
+
+      /////////////////drag and zoom helper
+
+      {showpopup && (
+        <div className="absolute inset-0 z-50 w-full h-full overflow-hidden bg-black/40 backdrop-blur-md flex items-end justify-center pb-25 sm:pb-30">
+
+          <div className="relative flex flex-col items-center gap-2 sm:gap-3 bg-white text-black backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl px-3 py-2 sm:px-5 sm:py-3 text-[10px] sm:text-xs shadow-xl max-w-[calc(100%-2rem)]">
+
+            {/* Rotate + Zoom */}
+            <div className="flex items-center gap-3 sm:gap-4">
+
+              {/* Rotate */}
+              <div className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-5 h-5 "
+                >
+                  <path d="M12 4v5" />
+                  <path d="m9.5 6.5 2.5-2.5 2.5 2.5" />
+
+                  <path d="M12 20v-5" />
+                  <path d="m9.5 17.5 2.5 2.5 2.5-2.5" />
+
+                  <path d="M4 12h5" />
+                  <path d="m6.5 9.5-2.5 2.5 2.5 2.5" />
+
+                  <path d="M20 12h-5" />
+                  <path d="m17.5 9.5 2.5 2.5-2.5 2.5" />
+                </svg>
+                <span>Drag to rotate</span>
+              </div>
+
+              {/* Divider */}
+              <div className="h-3 sm:h-4 w-px bg-black shrink-0" />
+
+              {/* Zoom */}
+              <div className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                <img
+                  src="/mouse_scroll/mouse_scroll.svg"
+                  alt="Scroll"
+                  className="w-5 h-5"
+                />
+                <span>Scroll to zoom</span>
+              </div>
+
+            </div>
+
+            {/* Continue message */}
+            <span className="text-[9px] sm:text-[10px] text-black/50 text-center whitespace-nowrap">
+              Close the popup to continue
+            </span>
+
+            {/* X */}
+            <button
+              type="button"
+              onClick={() => setShowpopup(false)}
+              title="Close instructions"
+              className="absolute -top-3 -right-3 text-xl sm:text-2xl h-6 w-6 sm:h-8 sm:w-8 flex items-center justify-center rounded-full bg-red-600 border-2 sm:border-3 border-red-600 text-black hover:text-3xl hover:text-white transition"
+            >
+              ×
+            </button>
+
+          </div>
+
         </div>
       )}
 
@@ -824,17 +928,17 @@ export default function EditorViewer() {
 
         {/* BODY */}
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5 scrollbar-hide">
 
           {/* BACKGROUND */}
 
           <div className="flex flex-col gap-2">
 
-            <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
+            <label className="text-xs mb-2 font-semibold uppercase tracking-wider text-white/40">
               Background Theme
             </label>
 
-            <div className="flex rounded-xl bg-white/20 p-1.5 backdrop-blur-xl border border-white/20 shadow-2xl">
+            <div className="flex rounded-4xl bg-white/20 backdrop-blur-xl border border-white/20 shadow-2xl">
 
               {BG_PRESETS.map(
                 (preset) => {
@@ -850,7 +954,7 @@ export default function EditorViewer() {
                           preset.value
                         )
                       }
-                      className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-all ${isActive
+                      className={`flex-1 rounded-4xl px-3 py-3 text-xs font-medium transition-all ${isActive
                         ? "bg-white text-black shadow-lg"
                         : "text-white/70 hover:text-white"
                         }`}
@@ -870,62 +974,36 @@ export default function EditorViewer() {
 
           <div className="flex flex-col gap-2">
 
-            <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
+            <label className="text-xs mb-2 font-semibold uppercase tracking-wider text-white/40">
               Active Component
             </label>
 
             <div className="relative">
 
-              <select
-                value={
-                  activeComponentId
-                }
-                onChange={(e) => {
-                  const selected =
-                    activeMaterialList.find(
-                      (item) =>
-                        item.id ===
-                        e.target.value
-                    );
-
-                  if (selected) {
-                    handleSelectMaterial(
-                      selected.matNames
-                    );
-                  } else {
-                    setSelectedMeshes(
-                      []
-                    );
-                  }
-                }}
-                className="w-full appearance-none rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
+              {/* Selected component / trigger */}
+              <button
+                type="button"
+                onClick={() => setIsComponentDropdownOpen(!isComponentDropdownOpen)}
+                className="w-full flex items-center justify-between rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
               >
-
-                <option
-                  value=""
-                  className="bg-neutral-900 text-white/60"
+                <span
+                  className={
+                    activeComponentId
+                      ? "text-white"
+                      : "text-white/60"
+                  }
                 >
-                  -- Select a component --
-                </option>
-
-                {activeMaterialList.map(
-                  (item) => (
-                    <option
-                      key={item.id}
-                      value={item.id}
-                      className="bg-neutral-900 text-white"
-                    >
-                      {item.label}
-                    </option>
-                  )
-                )}
-
-              </select>
-
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-white/60">
+                  {activeMaterialList.find(
+                    (item) =>
+                      item.id === activeComponentId
+                  )?.label ?? "-- Select a component --"}
+                </span>
 
                 <svg
-                  className="h-4 w-4"
+                  className={`h-4 w-4 text-white/60 transition-transform ${isComponentDropdownOpen
+                    ? "rotate-180"
+                    : ""
+                    }`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -937,9 +1015,50 @@ export default function EditorViewer() {
                     d="M19 9l-7 7-7-7"
                   />
                 </svg>
+              </button>
 
-              </div>
+              {/* Dropdown */}
+              {isComponentDropdownOpen && (
+                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl bg-neutral-900 border border-white/10 shadow-2xl">
+
+                  {/* Default option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMeshes([]);
+                      setIsComponentDropdownOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                  >
+                    -- Select a component --
+                  </button>
+
+                  {/* Components */}
+                  {activeMaterialList.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        handleSelectMaterial(
+                          item.matNames
+                        );
+
+                        setIsComponentDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left text-sm transition-colors cursor-pointer ${item.id === activeComponentId
+                        ? "bg-white/10 text-white"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
+                        }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+
+                </div>
+              )}
+
             </div>
+
           </div>
 
           {/* =================================================
@@ -956,7 +1075,7 @@ export default function EditorViewer() {
 
               <div className="flex flex-col gap-3">
 
-                <label className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                <label className="text-xs mb-2 font-semibold uppercase tracking-wider text-white/40">
                   Texture Presets
                 </label>
 
@@ -1137,27 +1256,22 @@ export default function EditorViewer() {
 
                 <div className="flex items-center gap-3 bg-white/5 p-2.5 rounded-xl border border-white/10">
 
+                  {/* Color picker */}
                   <input
                     type="color"
                     value={
-                      /^#[0-9A-F]{6}$/i.test(
-                        hexColor
-                      )
+                      /^#[0-9A-F]{6}$/i.test(hexColor)
                         ? hexColor
                         : "#ffffff"
                     }
-                    onChange={(e) =>
-                      updateColor(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => updateColor(e.target.value)}
                     style={{
                       colorScheme: "dark",
                     }}
                     className="h-10 w-10 shrink-0 rounded-lg cursor-pointer bg-transparent border-0 p-0"
                   />
 
-                  <div className="flex flex-col flex-1">
+                  <div className="flex flex-col flex-1 min-w-0">
 
                     <span className="text-[10px] text-white/40 uppercase font-semibold">
                       HEX Code
@@ -1167,31 +1281,112 @@ export default function EditorViewer() {
                       type="text"
                       value={hexColor}
                       onChange={(e) => {
-                        const value =
-                          e.target.value;
+                        let value = e.target.value;
 
-                        if (
-                          /^#[0-9A-F]{6}$/i.test(
-                            value
-                          )
-                        ) {
-                          updateColor(
-                            value
-                          );
+                        if (!value.startsWith("#")) {
+                          value = "#" + value;
+                        }
+
+                        if (/^#[0-9A-Fa-f]{0,6}$/.test(value)) {
+                          updateColor(value.toUpperCase());
                         }
                       }}
-                      className="bg-transparent text-sm font-mono text-white focus:outline-none uppercase"
+                      onBlur={() => {
+                        if (!/^#[0-9A-F]{6}$/i.test(hexColor)) {
+                          updateColor("#FFFFFF");
+                        }
+                      }}
+                      className="bg-transparent text-sm font-mono text-white focus:outline-none uppercase w-full"
                     />
 
                   </div>
+
+                  {/* Copy */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCopiedColor(hexColor);
+                      setColorMessage("Color copied");
+
+                      setTimeout(() => {
+                        setColorMessage("");
+                      }, 1500);
+                    }}
+                    className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer"
+                    title="Copy color"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-white/60"
+                    >
+                      <rect width="14" height="14" x="8" y="8" rx="2" />
+                      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+                    </svg>
+                  </button>
+
+                  {/* Paste */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!copiedColor) {
+                        setColorMessage("No color copied");
+
+                        setTimeout(() => {
+                          setColorMessage("");
+                        }, 1500);
+
+                        return;
+                      }
+
+                      updateColor(copiedColor);
+                      setColorMessage("Color pasted");
+
+                      setTimeout(() => {
+                        setColorMessage("");
+                      }, 1500);
+                    }}
+                    className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 transition cursor-pointer"
+                    title="Paste color"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-white/60"
+                    >
+                      <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                    </svg>
+                  </button>
+
                 </div>
               </div>
+
+              {colorMessage && (
+                <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-black bg-white border border-white/15 px-4 py-2 rounded-lg backdrop-blur-md shadow-lg whitespace-nowrap">
+                  {colorMessage}
+                </span>
+              )}
 
             </div>
 
           ) : (
 
-            <div className="flex-1 flex items-center justify-center text-center text-xs text-white/40">
+            <div className="flex-1 flex items-center justify-center text-center text-xs text-white">
               Choose a component from the dropdown above or click directly on the 3D model.
             </div>
 
