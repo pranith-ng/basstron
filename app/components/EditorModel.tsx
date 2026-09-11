@@ -5,6 +5,9 @@ import { useEffect, useState, useRef } from "react";
 import { useGLTF, PerspectiveCamera } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import gsap from "gsap";
+import { useMemo } from "react";
+import { useGSAP } from '@gsap/react';
+
 
 export type MaterialPreset = {
   id: string;
@@ -12,6 +15,7 @@ export type MaterialPreset = {
   color?: string;
   rough?: number;
   metal?: number;
+  image?: string;
   textureUrl?: string;
   normalUrl?: string;
 };
@@ -68,6 +72,9 @@ export default function EditorModel({
 
   const { scene } = useGLTF("/model/tws_threejs.glb");
 
+  const model = useMemo(() => scene.clone(true), [scene]);
+
+
   const animFrameRef = useRef<number | null>(null);
 
   const pointerDownPos = useRef({
@@ -75,9 +82,9 @@ export default function EditorModel({
     y: 0,
   });
 
-  const leftTws = scene.getObjectByName("left_tws");
-  const chargingCase = scene.getObjectByName("chargingcase");
-  const chargingCaseLid = scene.getObjectByName("chargingcase_lid");
+  const leftTws = model.getObjectByName("left_tws");
+  const chargingCase = model.getObjectByName("chargingcase");
+  const chargingCaseLid = model.getObjectByName("chargingcase_lid");
 
 
   // ---------------------------------------------------------
@@ -151,9 +158,16 @@ export default function EditorModel({
             return;
           }
 
+          const isLeather =
+            targetPresetId?.toLowerCase().includes("leather");
+
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(2, 2);
+          if (isLeather) {
+            texture.repeat.set(2, 2);
+          } else {
+            texture.repeat.set(2, 2);
+          }
           texture.colorSpace = THREE.SRGBColorSpace;
 
           mat.map = texture;
@@ -172,13 +186,19 @@ export default function EditorModel({
             return;
           }
 
+          const isLeather =
+            targetPresetId?.toLowerCase().includes("leather");
+
           texture.wrapS = THREE.RepeatWrapping;
           texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(2, 2);
+          if (isLeather) {
+            texture.repeat.set(2, 2);
+          } else {
+            texture.repeat.set(2, 2);
+          }
 
           mat.normalMap = texture;
 
-          const isLeather = targetPresetId?.toLowerCase().includes("leather");
           const scale = isLeather ? 4 : 1;
           mat.normalScale.set(scale, scale);
 
@@ -195,7 +215,7 @@ export default function EditorModel({
   // ---------------------------------------------------------
 
   useEffect(() => {
-    scene.traverse((child: THREE.Object3D) => {
+    model.traverse((child: THREE.Object3D) => {
       if (!(child instanceof THREE.Mesh)) return;
 
       const material = child.material as THREE.MeshStandardMaterial;
@@ -213,6 +233,18 @@ export default function EditorModel({
       const isEarbudMaterial =
         child.parent?.name === "left_tws" ||
         child.parent?.name === "right_tws";
+
+
+      // LED LIGHT
+
+      if (material.name === "led_light") {
+        material.emissive.set("#00ff00");
+        material.toneMapped = false;
+      }
+
+
+      //////////////////////////////
+
 
       if (show === "earbuds") {
         if (isCaseMaterial) {
@@ -243,14 +275,18 @@ export default function EditorModel({
         }
       }
     });
-  }, [show, scene]);
+  }, [show, model]);
 
   // ---------------------------------------------------------
   // CASE LID ANIMATION
   // ---------------------------------------------------------
 
-  useEffect(() => {
+  useGSAP(() => {
     if (!chargingCaseLid) return;
+
+    // -------------------------------------------------------
+    // CASE LID
+    // -------------------------------------------------------
 
     const targetZ = lidstatus
       ? THREE.MathUtils.degToRad(-100)
@@ -261,7 +297,67 @@ export default function EditorModel({
       duration: 0.8,
       ease: "power2.inOut",
     });
-  }, [lidstatus, chargingCaseLid]);
+
+    // -------------------------------------------------------
+    // LED
+    // -------------------------------------------------------
+
+    model.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+
+      const material = child.material;
+
+      if (
+        !(material instanceof THREE.MeshStandardMaterial) ||
+        material.name !== "led_light"
+      ) {
+        return;
+      }
+
+      // Stop any previous LED animation
+      gsap.killTweensOf(material);
+
+      // -----------------------------------------------------
+      // LID OPEN
+      // Blink once every 3 seconds
+      // -----------------------------------------------------
+
+      if (lidstatus) {
+        material.emissiveIntensity = 0;
+
+        gsap.to(material, {
+          emissiveIntensity: 30,
+          duration: 0.4,
+          repeat: -1,
+          yoyo: true,
+          repeatDelay: 2,
+          ease: "power1.inOut",
+        });
+      }
+
+      // -----------------------------------------------------
+      // LID CLOSED
+      // Blink fast 4 times → OFF
+      // -----------------------------------------------------
+
+      else {
+        material.emissiveIntensity = 0;
+
+        gsap.to(material, {
+          emissiveIntensity: 30,
+          duration: 0.35,
+          repeat: 7,
+          yoyo: true,
+          ease: "power1.inOut",
+          onComplete: () => {
+            material.emissiveIntensity = 0;
+          },
+        });
+      }
+    });
+  }, {
+    dependencies : [lidstatus, chargingCaseLid, model],
+  } );
 
   // ---------------------------------------------------------
   // MODEL TRANSFORMS
@@ -289,12 +385,16 @@ export default function EditorModel({
     }
 
     // Remove old highlight
-    scene.traverse((child: THREE.Object3D) => {
+    model.traverse((child: THREE.Object3D) => {
       if (!(child instanceof THREE.Mesh)) return;
 
       const mat = child.material as THREE.MeshStandardMaterial;
 
-      if (mat) {
+      if (
+        mat &&
+        mat.name !== "led_light" &&
+        mat instanceof THREE.MeshStandardMaterial
+      ) {
         mat.emissive.set("#000000");
         mat.emissiveIntensity = 0;
       }
@@ -359,7 +459,7 @@ export default function EditorModel({
         animFrameRef.current = null;
       }
     };
-  }, [selectedMeshes, scene]);
+  }, [selectedMeshes, model]);
 
   // ---------------------------------------------------------
   // RENDER
@@ -377,7 +477,7 @@ export default function EditorModel({
       />
 
       <primitive
-        object={scene}
+        object={model}
         onPointerDown={(e: ThreeEvent<PointerEvent>) => {
           pointerDownPos.current = {
             x: e.clientX,
@@ -428,7 +528,7 @@ export default function EditorModel({
 
           const matchingMeshes: THREE.Mesh[] = [];
 
-          scene.traverse((child: THREE.Object3D) => {
+          model.traverse((child: THREE.Object3D) => {
             if (!(child instanceof THREE.Mesh)) return;
 
             if (!child.visible) return;

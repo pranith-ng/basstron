@@ -26,7 +26,7 @@ export default function Viewer() {
 
 
   return (
-    <div className="absolute w-full h-screen inset-0 z-20">
+    <div className="absolute w-full h-svh inset-0 z-20">
       <Canvas
 
         gl={{
@@ -42,7 +42,7 @@ export default function Viewer() {
           zoom={6000}
         /> */}
         <Environment
-          files={"/hdr/dancing_hall_2k.hdr"}
+          files={"/hdr/dancing_hall_1k.exr"}
           environmentIntensity={1}
         // background={true}
 

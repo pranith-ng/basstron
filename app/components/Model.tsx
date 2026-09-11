@@ -7,6 +7,10 @@ import gsap from "gsap";
 import { useThree } from "@react-three/fiber";
 import { OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { useRef } from "react";
+import { useMemo } from "react";
+import { useGSAP } from '@gsap/react';
+
+
 
 
 
@@ -15,6 +19,9 @@ export default function Model({ ...props }) {
   const [baseZoom, setbaseZoom] = useState(0)
 
   const { scene } = useGLTF("/model/tws_threejs.glb");
+
+  const model = useMemo(() => scene.clone(true), [scene]);
+
   const scrollvalue = props.scrollValue
   const { camera } = useThree();
   const orthoCamera = camera as THREE.OrthographicCamera;
@@ -27,16 +34,16 @@ export default function Model({ ...props }) {
   //   console.log(orthoCamera);
   // }, [scrollvalue])
 
-  useEffect(() => {
+  useGSAP(() => {
 
     const camera = cameraRef.current;
-    const lid = scene.getObjectByName("chargingcase_lid");
-    const plane = scene.getObjectByName('Plane')
-    const chargingcaseobj = scene.getObjectByName('chargingcase')
-    const lefttws = scene.getObjectByName('left_tws')
-    const righttws = scene.getObjectByName('right_tws')
-    const chargingcase = scene.getObjectByName('chargingcase')
-    const chargingcaselid = scene.getObjectByName('chargingcase_lid')
+    const lid = model.getObjectByName("chargingcase_lid");
+    const plane = model.getObjectByName('Plane')
+    const chargingcaseobj = model.getObjectByName('chargingcase')
+    const lefttws = model.getObjectByName('left_tws')
+    const righttws = model.getObjectByName('right_tws')
+    const chargingcase = model.getObjectByName('chargingcase')
+    const chargingcaselid = model.getObjectByName('chargingcase_lid')
     const target = new THREE.Vector3();
     const offset = { y: 0.021 };
 
@@ -55,7 +62,7 @@ export default function Model({ ...props }) {
 
     let metalMaterial: THREE.Material | null = null;
 
-    scene.traverse((child) => {
+    model.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
 
       if (child.isMesh) {
@@ -109,7 +116,7 @@ export default function Model({ ...props }) {
 
     // Make the logos use the exact same material instance
     if (metalMaterial) {
-      scene.traverse((child) => {
+      model.traverse((child) => {
         if (
           child instanceof THREE.Mesh &&
           (child.name === "Curve" || child.name === "Curve002")
@@ -258,7 +265,9 @@ export default function Model({ ...props }) {
       });
     });
 
-  }, [scene]);
+  }, {
+    dependencies: [model],
+  });
 
   return <>
     <PerspectiveCamera
@@ -269,6 +278,6 @@ export default function Model({ ...props }) {
       near={0.1}
       far={20}
     />
-    <primitive object={scene} {...props} />;
+    <primitive object={model} {...props} />;
   </>
 }

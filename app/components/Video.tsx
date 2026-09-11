@@ -195,11 +195,10 @@ export default function Video() {
   return (
     <section
       ref={containerRef}
-      className="relative h-screen w-screen overflow-hidden bg-black"
-    >
+      className="relative z-10 h-[calc(100vh+2px)] w-screen overflow-hidden bg-black"    >
       {/* CANVAS */}
 
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute z-10 inset-0 flex items-center justify-center">
         <canvas
           ref={canvasRef}
           className="

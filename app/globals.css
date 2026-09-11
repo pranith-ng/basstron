@@ -19,6 +19,8 @@
   --color-foreground: var(--foreground);
   --font-mono: monospace;
   --font-josefin: "Josefin Sans", sans-serif;
+  --font-londrina: var(--font-londrina), sans-serif;
+  --font-poetsen: var(--font-poetsen), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -70,7 +72,15 @@ body {
   background: rgba(0, 0, 0, 0.4);
 }
 
-.gradientimg {
+.bgimg {
+  /* Blends a 50% white overlay over the image */
+  background-image: url("/background/b6.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* .gradientimg {
   background: linear-gradient(to top,
       #fff1eb,
       #b6e7fd,
@@ -91,7 +101,7 @@ body {
   100% {
     background-position: 50% 0%;
   }
-}
+} */
 
 
 

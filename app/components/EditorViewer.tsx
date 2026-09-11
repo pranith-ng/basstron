@@ -26,25 +26,26 @@ import EditorModel, {
 // ---------------------------------------------------------
 
 const EARBUD_MATERIALS = [
+  
+  {
+    id: "leather_tws",
+    label: "Back Panel",
+    matNames: ["leather_tws"],
+  },
+   {
+    id: "metal_tws",
+    label: "Stem",
+    matNames: ["metal_tws"],
+  },
   {
     id: "plastic_tws",
-    label: "Body Plastic",
+    label: "Main Body",
     matNames: ["plastic_tws"],
   },
   {
-    id: "leather_tws",
-    label: "Leather Accent",
-    matNames: ["leather_tws"],
-  },
-  {
     id: "silicone_tws",
-    label: "Ear Tips (Silicone)",
+    label: "Silicone Ear Tips",
     matNames: ["silicone_tws"],
-  },
-  {
-    id: "metal_tws",
-    label: "Metal Contacts/Stem",
-    matNames: ["metal_tws"],
   },
   {
     id: "inner_mesh_tws",
@@ -94,6 +95,7 @@ const TEXTURE_PRESETS: MaterialPreset[] = [
     color: "#2b231d",
     rough: 0.8,
     metal: 0,
+    image: "/texture_ball/leather.png",
     textureUrl: "/textures/leather/diffuse.jpg",
     normalUrl: "/textures/leather/normal.jpg",
   },
@@ -103,6 +105,7 @@ const TEXTURE_PRESETS: MaterialPreset[] = [
     color: "#1a1a1a",
     rough: 0.3,
     metal: 0.5,
+    image: "/texture_ball/carbon.png",
     textureUrl: "/textures/carbon/diffuse.jpg",
     normalUrl: "/textures/carbon/normal.jpg",
   },
@@ -110,8 +113,10 @@ const TEXTURE_PRESETS: MaterialPreset[] = [
     id: "metal",
     label: "Brushed Metal",
     color: "#a8a8a8",
-    rough: 0.25,
+    rough: 0.18,
     metal: 0.9,
+    image: "/texture_ball/metal.png",
+
   },
   {
     id: "wood-finish",
@@ -119,6 +124,7 @@ const TEXTURE_PRESETS: MaterialPreset[] = [
     color: "#8b5a2b",
     rough: 0.6,
     metal: 0.0,
+    image: "/texture_ball/wood.png",
     textureUrl: "/textures/wood/diffuse.jpg",
     normalUrl: "/textures/wood/normal.jpg",
   },
@@ -128,6 +134,8 @@ const TEXTURE_PRESETS: MaterialPreset[] = [
     color: "#3a3a3a",
     rough: 0.5,
     metal: 0.0,
+    image: "/texture_ball/plastic.png",
+
   },
 ];
 
@@ -269,54 +277,54 @@ export default function EditorViewer() {
   // SELECT MATERIAL
   // -------------------------------------------------------
 
- const handleSelectMaterial = useCallback(
-  (targetMatNames: string[]) => {
-    if (!sceneRef.current) return;
+  const handleSelectMaterial = useCallback(
+    (targetMatNames: string[]) => {
+      if (!sceneRef.current) return;
 
-    const matchingMeshes: THREE.Mesh[] = [];
+      const matchingMeshes: THREE.Mesh[] = [];
 
-    sceneRef.current.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
+      sceneRef.current.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
 
-      if (!child.visible) return;
+        if (!child.visible) return;
 
-      const mat =
-        child.material as THREE.MeshStandardMaterial;
+        const mat =
+          child.material as THREE.MeshStandardMaterial;
 
-      if (
-        mat &&
-        targetMatNames.includes(mat.name)
-      ) {
-        captureOriginalMaterial(child);
-        matchingMeshes.push(child);
-      }
-    });
+        if (
+          mat &&
+          targetMatNames.includes(mat.name)
+        ) {
+          captureOriginalMaterial(child);
+          matchingMeshes.push(child);
+        }
+      });
 
-    if (matchingMeshes.length === 0) return;
+      if (matchingMeshes.length === 0) return;
 
-    setIsRightOpen(true);
-    setHasSelectedComponentOnce(true);
+      setIsRightOpen(true);
+      setHasSelectedComponentOnce(true);
 
-    setSelectedMeshes((prev) => {
-      const prevNames = prev
-        .map((m) => getMaterialName(m))
-        .sort()
-        .join(",");
+      setSelectedMeshes((prev) => {
+        const prevNames = prev
+          .map((m) => getMaterialName(m))
+          .sort()
+          .join(",");
 
-      const nextNames = matchingMeshes
-        .map((m) => getMaterialName(m))
-        .sort()
-        .join(",");
+        const nextNames = matchingMeshes
+          .map((m) => getMaterialName(m))
+          .sort()
+          .join(",");
 
-      if (prevNames === nextNames) {
-        return prev;
-      }
+        if (prevNames === nextNames) {
+          return prev;
+        }
 
-      return matchingMeshes;
-    });
-  },
-  [captureOriginalMaterial]
-);
+        return matchingMeshes;
+      });
+    },
+    [captureOriginalMaterial]
+  );
 
   // -------------------------------------------------------
   // CREATE MATERIAL STATE WHEN SELECTED
@@ -631,7 +639,7 @@ export default function EditorViewer() {
 
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden text-white transition-all duration-500"
+      className="relative h-svh w-full overflow-hidden text-white transition-all duration-500"
       style={{
         background: bgGradient,
       }}
@@ -653,8 +661,8 @@ export default function EditorViewer() {
           dpr={[1, 2]}
         >
           <Environment
-            files="/hdr/dancing_hall_2k.hdr"
-            environmentIntensity={0.8}
+            files="/hdr/dancing_hall_1k.exr"
+            environmentIntensity={1}
           />
 
           <group ref={sceneRef}>
@@ -720,7 +728,7 @@ export default function EditorViewer() {
       /////////////////drag and zoom helper
 
       {showpopup && (
-        <div className="absolute inset-0 z-50 w-full h-full overflow-hidden bg-black/40 backdrop-blur-md flex items-end justify-center pb-25 sm:pb-30">
+        <div className="touch-none absolute inset-0 z-50 w-full h-full overflow-hidden bg-black/40 backdrop-blur-md flex items-end justify-center pb-25 sm:pb-30">
 
           <div className="relative flex flex-col items-center gap-2 sm:gap-3 bg-white text-black backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl px-3 py-2 sm:px-5 sm:py-3 text-[10px] sm:text-xs shadow-xl max-w-[calc(100%-2rem)]">
 
@@ -793,7 +801,7 @@ export default function EditorViewer() {
           BOTTOM BAR
       ===================================================== */}
 
-      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center rounded-4xl bg-black/60 p-2 backdrop-blur-xl border border-white/10 shadow-2xl transition-all duration-300">
+      <div className="touch-none absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center rounded-4xl bg-black/60 p-2 backdrop-blur-xl border border-white/10 shadow-2xl transition-all duration-300">
 
         <div className="flex bg-white/5 rounded-4xl">
 
@@ -801,7 +809,6 @@ export default function EditorViewer() {
             onClick={() => {
               setShow("earbuds");
               setSelectedMeshes([]);
-              setIsRightOpen(false);
             }}
             className={`rounded-4xl px-5 py-2 text-sm font-medium transition-all ${show === "earbuds"
               ? "bg-white text-black shadow-lg"
@@ -815,7 +822,6 @@ export default function EditorViewer() {
             onClick={() => {
               setShow("case");
               setSelectedMeshes([]);
-              setIsRightOpen(false);
             }}
             className={`rounded-4xl px-5 py-2 text-sm font-medium transition-all ${show === "case"
               ? "bg-white text-black shadow-lg"
@@ -866,7 +872,7 @@ export default function EditorViewer() {
           onClick={() =>
             setIsRightOpen(true)
           }
-          className="absolute right-4 top-6 z-30 flex h-10 w-10 items-center justify-center rounded-xl bg-black/70 backdrop-blur-xl border border-white/10 text-white/80 transition-all hover:bg-black/90 hover:text-white hover:scale-105 shadow-xl"
+          className="touch-none absolute right-4 top-6 z-30 flex h-10 w-10 items-center justify-center rounded-xl bg-black/70 backdrop-blur-xl border border-white/10 text-white/80 transition-all hover:bg-black/90 hover:text-white hover:scale-105 shadow-xl"
         >
           <svg
             className="h-5 w-5"
@@ -889,7 +895,7 @@ export default function EditorViewer() {
       ===================================================== */}
 
       <aside
-        className={`absolute right-4 sm:right-6 top-6 h-[calc(100vh-48px)] w-80 max-w-[calc(100vw-32px)] rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 flex flex-col z-30 overflow-hidden transition-all duration-300 ease-in-out ${isRightOpen
+        className={`overscroll-contain absolute right-4 sm:right-6 top-6 h-[calc(100svh-48px)] w-80 max-w-[calc(100vw-32px)] rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 flex flex-col z-30 overflow-hidden transition-all duration-300 ease-in-out ${isRightOpen
           ? "translate-x-0 opacity-100"
           : "translate-x-full opacity-0 pointer-events-none"
           }`}
@@ -928,7 +934,7 @@ export default function EditorViewer() {
 
         {/* BODY */}
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5 scrollbar-hide">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5 scrollbar-hide ">
 
           {/* BACKGROUND */}
 
@@ -1019,9 +1025,7 @@ export default function EditorViewer() {
 
               {/* Dropdown */}
               {isComponentDropdownOpen && (
-                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl bg-neutral-900 border border-white/10 shadow-2xl">
-
-                  {/* Default option */}
+                <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl bg-neutral-900 border border-white/10 shadow-[0_55px_50px_rgba(0,0,0,1)]">                  {/* Default option */}
                   <button
                     type="button"
                     onClick={() => {
@@ -1114,17 +1118,21 @@ export default function EditorViewer() {
                           className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all group ${isPresetDisabled
                             ? "bg-white/5 border-white/5 opacity-40 cursor-not-allowed"
                             : isSelected
-                              ? "bg-cyan-500/10 border-cyan-400 shadow-lg"
+                              ? "bg-cyan-500/10 border-2 border-cyan-400 shadow-lg"
                               : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 cursor-pointer"
                             }`}
                         >
 
                           <div
-                            className="h-10 w-10 rounded-full border border-white/20 shadow-inner group-hover:scale-105 transition-transform"
+                            className={`h-14 w-14 rounded-full group-hover:scale-105 transition-transform bg-cover bg-center ${preset.id === "reset" ? "border-2 border-white" : ""
+                              }`}
                             style={{
-                              backgroundColor:
-                                preset.color ??
-                                "transparent",
+                              backgroundImage:
+                                preset.id === "reset"
+                                  ? "linear-gradient(45deg, transparent 49%, white 48%, white 51%, transparent 51%)"
+                                  : preset.image
+                                    ? `url(${preset.image})`
+                                    : "none",
                             }}
                           />
 
