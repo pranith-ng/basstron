@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const images = [
-    "/byo/1.png",
-    "/byo/2.png",
-    "/byo/3.png",
-    "/byo/4.png",
-    "/byo/5.png",
+    "/byo/1.webp",
+    "/byo/2.webp",
+    "/byo/3.webp",
+    "/byo/4.webp",
+    "/byo/5.webp",
 ];
 
 export default function Byo() {

@@ -9,12 +9,15 @@ import { OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import { useRef } from "react";
 import { useMemo } from "react";
 import { useGSAP } from '@gsap/react';
+import { useAppContext } from "../context/Context";
 
 
 
 
 
 export default function Model({ ...props }) {
+
+  const { setViewerLoaded } = useAppContext();
 
   const [baseZoom, setbaseZoom] = useState(0)
 
@@ -224,6 +227,8 @@ export default function Model({ ...props }) {
     )
 
     tl.eventCallback("onComplete", () => {
+
+      setViewerLoaded(true)
       // LEFT TWS
       gsap.to(lefttws.position, {
         y: "+=0.005",

@@ -5,12 +5,12 @@ import React from "react";
 const Features = () => {
   const feature1 = [
     {
-      video: "/bentogrid/noise_cancellation/video.mp4",
+      video: "/bentogrid/noise_cancellation/video_1.mp4",
       heading: "noise cancellation",
       text: "Block out unwanted background noise and stay fully immersed in your music with powerful active noise cancellation, wherever you go.",
     },
     {
-      video: "/bentogrid/lightning/video.mp4",
+      video: "/bentogrid/lightning/video_1.mp4",
       heading: "fast charging",
       text: "Power up quickly and get back to your music with fast charging that delivers hours of playback in just minutes.",
     },
@@ -25,7 +25,7 @@ const Features = () => {
       subtitle: "buds only",
       imgAlt: "Earbuds calling feature",
       reverse: false,
-      img: "/bentogrid/tws_1.png",
+      img: "/bentogrid/tws_1.webp",
       tws: "1",
     },
     {
@@ -36,7 +36,7 @@ const Features = () => {
       subtitle: "buds only",
       imgAlt: "Earbuds music playback",
       reverse: true,
-      img: "/bentogrid/tws_2.png",
+      img: "/bentogrid/tws_2.webp",
       tws: "2",
     },
     {
@@ -47,7 +47,7 @@ const Features = () => {
       subtitle: "Buds + Case",
       imgAlt: "Earbuds with charging case",
       reverse: false,
-      img: "/bentogrid/tws_case_2.png",
+      img: "/bentogrid/tws_case_2.webp",
       tws: "3",
     },
   ];
@@ -73,6 +73,9 @@ const Features = () => {
                     loop
                     playsInline
                     ref={(video) => {
+                      if (video && index === 0) {
+                        video.playbackRate = 0.9;
+                      }
                       if (video && index === 1) {
                         video.playbackRate = 0.8;
                       }
