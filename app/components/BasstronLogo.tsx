@@ -37,7 +37,7 @@ export default function BasstronLogo() {
     const { setLoaderLoaded } = useAppContext();
     const { viewerLoaded } = useAppContext();
 
-    const [progress, setProgress] = useState(0);
+    const [finished, setFinished] = useState(false);
 
     const logoColor = viewerLoaded ? "#000000" : "#ffffff";
 
@@ -46,13 +46,9 @@ export default function BasstronLogo() {
     const waveRef = useRef<SVGPathElement>(null);
     const logoRef = useRef<SVGSVGElement>(null);
 
-    const animatedProgress = useRef({
-        value: 0,
-    });
-
-    const phaseRef = useRef({
-        value: 0,
-    });
+    const progressRef = useRef(0);
+    const displayedProgressRef = useRef(0);
+    const phaseRef = useRef(0);
 
     // =========================================
     // FILES TO LOAD
@@ -66,27 +62,26 @@ export default function BasstronLogo() {
             "/background/b6.jpg",
 
             ...Array.from(
-                { length: 353 },
+                { length: 356 },
                 (_, i) =>
-                    `/frames/${String(i + 1).padStart(4, "0")}.jpg`
+                    `/frames/${String(i + 1).padStart(4, "0")}.webp`
             ),
         ];
 
         let loaded = 0;
-        let actualProgress = 0;
+        const actualProgress = { value: 0 };
 
         const updateProgress = () => {
             loaded++;
 
-            actualProgress = (loaded / files.length) * 100;
+            actualProgress.value = (loaded / files.length) * 100;
         };
 
         const update = () => {
             const elapsed = performance.now() - startTime;
 
             // Progress based on actual loading
-            const loadingProgress = actualProgress;
-
+            const loadingProgress = actualProgress.value;
             // Progress based on minimum 3 second duration
             const timeProgress = Math.min(
                 100,
@@ -99,13 +94,14 @@ export default function BasstronLogo() {
                 timeProgress
             );
 
-            setProgress(progress);
+            progressRef.current = progress;
 
             if (
-                actualProgress >= 100 &&
+                actualProgress.value >= 100 &&
                 timeProgress >= 100
             ) {
-                setProgress(100);
+                progressRef.current = 100;
+                setFinished(true);
                 return;
             }
 
@@ -136,46 +132,52 @@ export default function BasstronLogo() {
     // SMOOTH PROGRESS
     // =========================================
 
-    useGSAP(() => {
-        gsap.to(animatedProgress.current, {
-            value: progress,
-            duration: 0.25,
-            ease: "power2.out",
-            overwrite: true,
-        });
-    }, [progress]);
+
 
     // =========================================
     // WAVE
     // =========================================
 
     useGSAP(() => {
-        gsap.to(phaseRef.current, {
-            value: Math.PI * 2,
-            duration: 0.7,
-            repeat: -1,
-            ease: "none",
+        let animationFrame: number;
+        let lastTime = performance.now();
 
-            onUpdate: () => {
-                if (!waveRef.current) return;
+        const update = (time: number) => {
+            const delta = Math.min((time - lastTime) / 1000, 0.05);
+            lastTime = time;
 
+            // Smooth progress
+            displayedProgressRef.current +=
+                (progressRef.current - displayedProgressRef.current) *
+                Math.min(delta * 8, 1);
+
+            // Wave movement
+            phaseRef.current += delta * ((Math.PI * 2) / 0.7);
+
+            if (waveRef.current) {
                 waveRef.current.setAttribute(
                     "d",
                     buildWavePath(
-                        animatedProgress.current.value,
-                        phaseRef.current.value
+                        displayedProgressRef.current,
+                        phaseRef.current
                     )
                 );
-            },
-        });
-    });
+            }
+
+            animationFrame = requestAnimationFrame(update);
+        };
+
+        animationFrame = requestAnimationFrame(update);
+
+        return () => cancelAnimationFrame(animationFrame);
+    }, []);
 
     // =========================================
     // FINISHED
     // =========================================
 
     useGSAP(() => {
-        if (progress < 100) return;
+        if (!finished) return;
         if (!logoRef.current) return;
 
         gsap.to(logoRef.current, {
@@ -187,7 +189,7 @@ export default function BasstronLogo() {
                 setLoaderLoaded(true);
             },
         });
-    }, [progress]);
+    }, [finished]);
 
     return (
         <svg
@@ -204,7 +206,7 @@ export default function BasstronLogo() {
                 <clipPath id={clipId}>
                     <path
                         ref={waveRef}
-                        d={buildWavePath(progress, 0)}
+                        d={buildWavePath(0, 0)}
                     />
                 </clipPath>
             </defs>

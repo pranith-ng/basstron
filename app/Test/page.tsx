@@ -1,38 +1,31 @@
-"use client";
-
+"use client"
 import { useEffect, useState } from "react";
 import BasstronLogo from "../components/BasstronLogo";
+import Viewer from "../components/Viewer";
 import Hero from "../components/Hero";
+import Video from "../components/Video";
+import Features from "../components/Features";
+import Specifications from "../components/Specification";
+import Footer from "../components/Footer";
+import Byo from "../components/Byo";
 
 export default function TestPage() {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const duration = 5000;
-    const interval = 50;
-    const steps = duration / interval;
-
-    let step = 0;
-
-    const timer = setInterval(() => {
-      step++;
-
-      const value = Math.min(
-        100,
-        Math.round((step / steps) * 100)
-      );
-
-      setProgress(value);
-
-      if (value >= 100) {
-        clearInterval(timer);
-      }
-    }, interval);
-
-    return () => clearInterval(timer);
-  }, []);
 
   return (
-    <Hero />
-  );
+     <div className={`bg-black h-svh`}>
+
+      <div className="relative h-svh w-full">
+        
+        {/* <Viewer /> */}
+        <Hero />
+      </div>
+
+      <Video />
+      <Features />
+      <Byo />
+      <Specifications />
+      <Footer />
+      
+    </div>
+  )
 }

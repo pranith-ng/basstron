@@ -1,3 +1,5 @@
+import Footer from "./Footer";
+
 interface SpecItem {
   label: string;
   value: string | string[];
@@ -6,66 +8,65 @@ interface SpecItem {
 const LEFT_SPECS: SpecItem[] = [
   {
     label: "Product name:",
-    value: "realme Buds T300",
+    value: "BASSTRON T1",
   },
   {
     label: "Colors:",
-    value: "Stylish Black   Youth White",
+    value: "Fully Customizable",
   },
   {
     label: "Noise cancellation features:",
     value: [
-      "30dB Active Noise Cancellation",
-      "Environment Noise Cancellation",
+      "50 dB Active Noise Cancellation",
+      "Environmental Noise Cancellation",
     ],
   },
   {
-    label: "Audio Codec:",
-    value: "AAC, SBC",
+    label: "Audio Codecs:",
+    value: "SBC · AAC · LDAC",
   },
   {
     label: "Battery:",
     value: [
-      "Charging case+Buds :",
-      "40hrs Music Playback (50% Volume, ANC OFF)",
-      "30hrs Music Playback (50% Volume, ANC ON)",
+      "Charging Case + Buds:",
+      "48 hrs Music Playback (50% Volume, ANC OFF)",
+      "34 hrs Music Playback (50% Volume, ANC ON)",
       "",
-      "Earbuds alone:",
-      "8hrs Music Playback (50% Volume, ANC OFF)",
-      "6hrs Music Playback (50% Volume, ANC ON)",
-      "4hrs Calling Time (50% Volume, ANC OFF/ON)",
+      "Earbuds Alone:",
+      "8 hrs Music Playback (50% Volume, ANC OFF)",
+      "6 hrs Music Playback (50% Volume, ANC ON)",
+      "5 hrs Calling Time (50% Volume, ANC OFF/ON)",
     ],
   },
 ];
 
 const RIGHT_SPECS: SpecItem[] = [
   {
-    label: "Bluetooth version:",
-    value: "5.3",
+    label: "Bluetooth Version:",
+    value: "6.3",
   },
   {
     label: "Wireless Range:",
-    value: "10m",
+    value: "15 m",
   },
   {
     label: "Waterproof Rating:",
-    value: "IP55 (earbuds Only)",
+    value: "IPX7 (earbuds only)",
   },
   {
-    label: "Sound Size:",
-    value: "12.4mm",
+    label: "Driver Size:",
+    value: "12 mm",
   },
   {
-    label: "Charging time:",
+    label: "Fast Charging:",
     value: [
-      "Charging case+Buds :",
-      "10mins Charge for 7hrs Playback",
-      "(50% Volume, ANC OFF)",
+      "Charging Case + Buds:",
+      "10 min charge → 7 hrs Playback",
     ],
   },
   {
     label: "Battery Capacity:",
-    value: ["Charging case: 460mAh", "Single earbud: 43mAh"],
+    value: ["Charging case: 480 mAh", "Single earbud: 50 mAh"],
   },
 ];
 
@@ -97,19 +98,28 @@ function SpecColumn({ items }: { items: SpecItem[] }) {
 
 export default function Specifications() {
   return (
-    <section className="relative z-10 w-full bg-black pt-10 text-white sm:px-10 lg:px-20">
-      <div className="mx-auto w-full max-w-[1100px] rounded-4xl bg-slate-900 px-6 py-10">
-        <h2 className="font-josefin text-center text-3xl font-medium text-white">
-          Specifications
-        </h2>
+    <div className="relative w-full bg-black">
+      {/* 
+        1. z-10 & bg-black: Covers the footer as you scroll down.
+        2. relative: Slides up over the sticky footer.
+      */}
+      <section className="relative z-10 min-h-screen w-full bg-black pt-10 text-white sm:px-10 lg:px-20">
+        <div className="mx-auto w-full max-w-[1100px] rounded-4xl bg-slate-900 px-6 py-10">
+          <h2 className="font-josefin text-center text-3xl font-medium text-white">
+            Specifications
+          </h2>
 
-        <div className="mt-8 h-px w-full bg-gray-700" />
+          <div className="mt-8 h-px w-full bg-gray-700" />
 
-        <div className="grid grid-cols-1 gap-x-20 md:grid-cols-2 md:justify-items-center">
-          <SpecColumn items={LEFT_SPECS} />
-          <SpecColumn items={RIGHT_SPECS} />
+          <div className="grid grid-cols-1 gap-x-20 md:grid-cols-2 md:justify-items-center">
+            <SpecColumn items={LEFT_SPECS} />
+            <SpecColumn items={RIGHT_SPECS} />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* 2. Separate Footer component */}
+      <Footer />
+    </div>
   );
 }

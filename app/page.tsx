@@ -44,25 +44,20 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="bg-black">
+    <div className={`bg-black ${!heroLoaded ? "h-svh overflow-hidden" : "min-h-screen"}`}>
 
       <div className="relative h-svh w-full">
-        <BasstronLogo/>
+        <BasstronLogo />
         {loaderLoaded && <Viewer />}
         {viewerLoaded && <Hero />}
       </div>
 
-      {heroLoaded && (
-        <>
-          {/* <Video /> */}
-          <Features />
-          <Byo />
-          <Specifications />
-          <Footer />
-        </>
-      )}
-
-
+      <Video />
+      <Features />
+      <Byo />
+      <Specifications />
+      {/* {heroLoaded && <Footer />} */}
+      
     </div>
   );
 }

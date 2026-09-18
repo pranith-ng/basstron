@@ -1,61 +1,35 @@
-"use client"
+"use client";
 
-import * as THREE from "three";
-import { useState, useEffect } from "react";
-import { gsap } from "gsap";
-
-import { Canvas } from "@react-three/fiber"
-import { Environment, OrbitControls, OrthographicCamera } from "@react-three/drei"
-import Model from "./Model"
+import { useInView } from "react-intersection-observer";
+import { Canvas } from "@react-three/fiber";
+import { Environment } from "@react-three/drei";
+import Model from "./Model";
 
 export default function Viewer() {
-
-  const [scrollValue, setScrollValue] = useState(0);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setScrollValue(e.clientX);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
+  const { ref, inView } = useInView({
+    threshold: 0.05,
+    initialInView: true,
+  });
 
   return (
-    <div className="absolute w-full h-svh inset-0 z-20">
+    <div ref={ref} className="pointer-events-none absolute inset-0 z-20 h-svh w-full">
       <Canvas
-
+        // Pauses 100% of rendering when off-screen, preserving animation state
+        frameloop={inView ? "always" : "never"}
         gl={{
           antialias: true,
           powerPreference: "high-performance",
-
+          failIfMajorPerformanceCaveat: false,
+          precision: "mediump",
         }}
-        dpr={[1, 2]}
+        dpr={[1, typeof window !== "undefined" && window.innerWidth < 768 ? 1 : 1.5]}
       >
-        {/* <OrthographicCamera
-          makeDefault
-          position={[0, 0.118, 1]}
-          zoom={6000}
-        /> */}
         <Environment
-          files={"/hdr/dancing_hall_1k.exr"}
-          environmentIntensity={1}
-        // background={true}
-
+          files="/hdr/dancing_hall_1k.exr"
+          environmentIntensity={0.8}
         />
-        {/* <mesh>
-                <boxGeometry />
-                <meshNormalMaterial />
-            </mesh> */}
-        <Model scrollValue={scrollValue} />
-        {/* <OrbitControls
-                minDistance={0.2}
-            /> */}
+        <Model />
       </Canvas>
     </div>
-  )
+  );
 }

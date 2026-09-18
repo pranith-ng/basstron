@@ -7,12 +7,12 @@ const Features = () => {
     {
       video: "/bentogrid/noise_cancellation/video_1.mp4",
       heading: "noise cancellation",
-      text: "Block out unwanted background noise and stay fully immersed in your music with powerful active noise cancellation, wherever you go.",
+      text: "Block out distractions with powerful active noise cancellation for a clearer, more immersive listen.",
     },
     {
       video: "/bentogrid/lightning/video_1.mp4",
       heading: "fast charging",
-      text: "Power up quickly and get back to your music with fast charging that delivers hours of playback in just minutes.",
+      text: "Charge for minutes, listen for hours. Fast charging keeps you ready when you need it.",
     },
   ];
 
