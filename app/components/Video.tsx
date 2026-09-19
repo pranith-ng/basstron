@@ -224,7 +224,7 @@ export default function Video() {
           trigger: container,
           start: "top top",
           end: "+=28000",
-          scrub: 0.15,
+          scrub: true,
           pin: true,
           pinSpacing: true,
         },
@@ -312,7 +312,7 @@ export default function Video() {
       className="
         relative
         z-10
-        h-svh
+        h-screen
         w-full
         overflow-hidden
         bg-black

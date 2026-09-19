@@ -77,37 +77,9 @@ body {
 }
 
 .bgimg {
-  /* Blends a 50% white overlay over the image */
   background-image: url("/background/b6.jpg");
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
 }
 
-/* .gradientimg {
-  background: linear-gradient(to top,
-      #fff1eb,
-      #b6e7fd,
-      #fff1eb);
-  background-size: 200% 200%;
-  animation: gradientMove 10s ease infinite;
-}
-
-@keyframes gradientMove {
-  0% {
-    background-position: 50% 0%;
-  }
-
-  50% {
-    background-position: 50% 100%;
-  }
-
-  100% {
-    background-position: 50% 0%;
-  }
-} */
-
-
-
-/* important background .gradientimg{
-background-image: linear-gradient(to top, #fff1eb 0%, #ace0f9 100%);} */

@@ -8,9 +8,9 @@ import Hero from "./components/Hero";
 import Video from "./components/Video";
 import Features from "./components/Features";
 import Specifications from "./components/Specification";
-import Footer from "./components/Footer";
 import Byo from "./components/Byo";
 import BasstronLogo from "./components/BasstronLogo";
+import BackToTop from "./components/Backtotop";
 
 export default function Home() {
   const [progress, setProgress] = useState(0);
@@ -56,7 +56,7 @@ export default function Home() {
       <Features />
       <Byo />
       <Specifications />
-
+      <BackToTop />
     </div>
   );
 }
