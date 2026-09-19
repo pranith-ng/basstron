@@ -26,13 +26,13 @@ import EditorModel, {
 // ---------------------------------------------------------
 
 const EARBUD_MATERIALS = [
-  
+
   {
     id: "leather_tws",
     label: "Back Panel",
     matNames: ["leather_tws"],
   },
-   {
+  {
     id: "metal_tws",
     label: "Stem",
     matNames: ["metal_tws"],
@@ -731,6 +731,26 @@ export default function EditorViewer() {
         <div className="touch-none absolute inset-0 z-50 w-full h-full overflow-hidden bg-black/40 backdrop-blur-md flex items-end justify-center pb-25 sm:pb-30">
 
           <div className="relative flex flex-col items-center gap-2 sm:gap-3 bg-white text-black backdrop-blur-md border border-white/10 rounded-lg sm:rounded-xl px-3 py-2 sm:px-5 sm:py-3 text-[10px] sm:text-xs shadow-xl max-w-[calc(100%-2rem)]">
+
+            <div className="font-josefin px-4 py-2 text-center max-w-[450px]">
+              <div>
+                <h2 className="pb-4 text-lg font-semibold">
+                  Welcome to BASSTRON Studio
+                </h2>
+
+                <p className="pb-3">
+                  The T1 is a fictional concept created to showcase interactive 3D
+                  product design and web development. Customize it. Experiment with it.
+                  Make it yours.
+                </p>
+
+                <p className="pb-5 font-bold">
+                  The BASSTRON T1 is not available for purchase.
+                </p>
+              </div>
+
+              <hr className="border-black/10" />
+            </div>
 
             {/* Rotate + Zoom */}
             <div className="flex items-center gap-3 sm:gap-4">

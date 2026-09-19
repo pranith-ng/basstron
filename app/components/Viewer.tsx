@@ -22,7 +22,7 @@ export default function Viewer() {
           failIfMajorPerformanceCaveat: false,
           precision: "mediump",
         }}
-        dpr={[1, typeof window !== "undefined" && window.innerWidth < 768 ? 1 : 1.5]}
+        dpr={[1, 2]}
       >
         <Environment
           files="/hdr/dancing_hall_1k.exr"

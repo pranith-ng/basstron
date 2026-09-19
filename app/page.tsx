@@ -56,8 +56,7 @@ export default function Home() {
       <Features />
       <Byo />
       <Specifications />
-      {/* {heroLoaded && <Footer />} */}
-      
+
     </div>
   );
 }

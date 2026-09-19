@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
@@ -15,7 +14,7 @@ const images = [
 
 export default function Byo() {
   const [currentImage, setCurrentImage] = useState(0);
-  
+
   // Pause cycle when section is off-screen
   const { ref, inView } = useInView({
     threshold: 0.1,
@@ -37,16 +36,14 @@ export default function Byo() {
       {/* Image Stack Container */}
       <div className="relative w-full h-[140vw] sm:h-[100vw] md:h-[90vw] lg:h-[700px] xl:h-[800px]">
         {images.map((src, index) => (
-          <Image
+          <img
             key={src}
             src={src}
             alt={`Build your own earbuds step ${index + 1}`}
-            fill
-            sizes="(max-width: 1920px) 100vw, 1920px"
-            priority={index === 0}
-            className={`object-cover object-center transition-opacity duration-500 ease-in-out ${
-              index === currentImage ? "opacity-100 z-10" : "opacity-0 z-0"
-            }`}
+            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out ${index === currentImage
+                ? "opacity-100 z-10"
+                : "opacity-0 z-0"
+              }`}
           />
         ))}
       </div>

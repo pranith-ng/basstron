@@ -312,8 +312,8 @@ export default function Video() {
       className="
         relative
         z-10
-        h-[calc(100vh+2px)]
-        w-screen
+        h-svh
+        w-full
         overflow-hidden
         bg-black
       "
@@ -324,7 +324,7 @@ export default function Video() {
         className="
           absolute
           inset-0
-          w-screen
+          w-full
           h-screen
           z-10
           flex
