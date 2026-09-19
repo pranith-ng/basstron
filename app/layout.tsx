@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Josefin_Sans, Londrina_Solid, Poetsen_One } from "next/font/google";
 import "./globals.css";
 import { ContextProvider } from "./context/Context";
-import SmoothScroll from "./components/SmoothScroll";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -45,7 +44,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poetsen.variable} ${londrina.variable} ${josefin.variable} ${geistSans.variable} ${geistMono.variable} antialiased bg-black`}>
-        <SmoothScroll />
         <ContextProvider>
           {children}
         </ContextProvider>

@@ -11,6 +11,7 @@ import Specifications from "./components/Specification";
 import Byo from "./components/Byo";
 import BasstronLogo from "./components/BasstronLogo";
 import BackToTop from "./components/Backtotop";
+import SmoothScroll from "./components/SmoothScroll";
 
 export default function Home() {
   const [progress, setProgress] = useState(0);
@@ -45,6 +46,8 @@ export default function Home() {
 
   return (
     <div className={`bg-black ${!heroLoaded ? "h-svh overflow-hidden" : "min-h-screen"}`}>
+
+      <SmoothScroll />
 
       <div className="relative h-svh w-full">
         <BasstronLogo />
